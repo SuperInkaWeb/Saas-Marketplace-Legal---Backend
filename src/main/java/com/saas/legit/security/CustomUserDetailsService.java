@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -28,12 +29,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
-        List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getNameRol().toUpperCase()))
-                .toList();
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        if (user.getRole() != null) {
+            authorities.add(new SimpleGrantedAuthority(user.getRole().getNameRol().toUpperCase()));
+        }
 
         Long tenantId = null;
-        if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_LAWYER"))) {
+        if (user.hasRole("LAWYER")) {
             tenantId = lawyerProfileRepository.findByUserIdUser(user.getIdUser())
                     .map(profile -> profile.getLawFirm() != null ? profile.getLawFirm().getIdLawFirm() : null)
                     .orElse(null);

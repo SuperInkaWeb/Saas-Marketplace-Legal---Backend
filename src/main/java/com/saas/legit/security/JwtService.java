@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,17 +27,21 @@ public class JwtService {
 
     private static final String ISSUER = "Legit_SaaS";
 
-    public String generateToken(Long userId, String email, List<String> roles, Long tenantId) {
-        return Jwts.builder()
+    public String generateToken(Long userId, String email, String role, Long tenantId) {
+        var builder = Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
-                .claim("roles", roles)
                 .claim("tenant", tenantId)
                 .issuer(ISSUER)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
-                .compact();
+                .signWith(getSigningKey(), Jwts.SIG.HS256);
+
+        if (role != null) {
+            builder.claim("role", role);
+        }
+
+        return builder.compact();
     }
 
     public Optional<Claims> validateAndExtractClaims(String token) {

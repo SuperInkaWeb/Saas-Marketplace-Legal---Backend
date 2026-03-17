@@ -15,16 +15,9 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register/client")
-    public ResponseEntity<String> registerClient(@Valid @RequestBody ClientRegistrationRequest request) {
-        authService.registerClient(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.");
-    }
-
-    @PostMapping("/register/lawyer")
-    public ResponseEntity<String> registerLawyer(@Valid @RequestBody LawyerRegistrationRequest request) {
-        authService.registerLawyer(request);
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+        authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Registro exitoso. Por favor, revisa tu correo para verificar tu cuenta.");
     }

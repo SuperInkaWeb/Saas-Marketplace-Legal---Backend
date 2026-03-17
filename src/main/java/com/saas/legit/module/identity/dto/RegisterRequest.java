@@ -2,9 +2,10 @@ package com.saas.legit.module.identity.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record ClientRegistrationRequest (
+public record RegisterRequest(
         @NotBlank(message = "El nombre es obligatorio")
         String firstName,
 
@@ -22,7 +23,7 @@ public record ClientRegistrationRequest (
         @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
         String password,
 
-        String phoneNumber,
-        String companyName,
-        String billingAddress
+        @NotBlank(message = "El número de teléfono es obligatorio")
+        @Pattern(regexp = "^\\+?[0-9\\s-]{7,15}$", message = "Formato de teléfono inválido")
+        String phoneNumber
 ) {}
