@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(100) NOT NULL,
     last_name_father VARCHAR(100) NOT NULL,
     last_name_mother VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE,
     version BIGINT DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

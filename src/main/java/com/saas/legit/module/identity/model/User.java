@@ -8,8 +8,6 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -27,7 +25,7 @@ public class User {
     @Column(name = "public_id", updatable = false, nullable = false, unique = true)
     private UUID publicId;
 
-    @Column(name="email", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "password_secret", nullable = false)
@@ -42,11 +40,20 @@ public class User {
     @Column(name = "last_name_mother", nullable = false, length = 100)
     private String lastNameMother;
 
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", nullable = false, length = 20)
     private String phoneNumber;
 
-    @Column(name = "is_active")
-    private Boolean isActive = false;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "onboarding_step", nullable = false, length = 30)
+    private OnboardingStep onboardingStep = OnboardingStep.ACCOUNT_CREATED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false, length = 20)
+    private AccountStatus accountStatus = AccountStatus.PENDING;
 
     @Version
     private Long version;
@@ -62,26 +69,38 @@ public class User {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles = new HashSet<>();
-
     public User() {
     }
 
-    public User(String email, String passwordSecret, String firstName, String lastNameFather, String lastNameMother, String phoneNumber) {
+    public User(String email, String passwordSecret, String firstName,
+                String lastNameFather, String lastNameMother, String phoneNumber) {
         this.email = email;
         this.passwordSecret = passwordSecret;
         this.firstName = firstName;
         this.lastNameFather = lastNameFather;
         this.lastNameMother = lastNameMother;
         this.phoneNumber = phoneNumber;
-        this.isActive = false;
-        this.roles = new HashSet<>();
+        this.accountStatus = AccountStatus.PENDING;
+        this.onboardingStep = OnboardingStep.ACCOUNT_CREATED;
+    }
+
+    public String getFullName() {
+        return firstName + " " + lastNameFather;
+    }
+
+    public String getRoleName() {
+        return role != null ? role.getNameRol() : null;
+    }
+
+    public boolean hasRole(String roleName) {
+        if (role == null || roleName == null) return false;
+        String existingRole = role.getNameRol().toUpperCase();
+        String targetRole = roleName.toUpperCase();
+
+        String cleanExisting = existingRole.startsWith("ROLE_") ? existingRole.substring(5) : existingRole;
+        String cleanTarget = targetRole.startsWith("ROLE_") ? targetRole.substring(5) : targetRole;
+
+        return cleanExisting.equals(cleanTarget);
     }
 
     @PrePersist

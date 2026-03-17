@@ -1,8 +1,6 @@
 package com.saas.legit.core.exception;
 
-import com.saas.legit.module.identity.exception.EmailAlreadyRegisteredException;
-import com.saas.legit.module.identity.exception.InvalidCredentialsException;
-import com.saas.legit.module.identity.exception.OtpExpiredException;
+import com.saas.legit.module.identity.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -25,22 +23,58 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.UNAUTHORIZED,
-                ex.getMessage()
-        );
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setTitle("Acceso Denegado");
         return problem;
     }
 
     @ExceptionHandler(OtpExpiredException.class)
     public ProblemDetail handleOtpExpired(OtpExpiredException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.GONE,
-                ex.getMessage()
-        );
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.GONE, ex.getMessage());
         problem.setTitle("Código Expirado");
         problem.setProperty("acción", "Solicita un nuevo código usando el endpoint /resend-otp");
+        return problem;
+    }
+
+    @ExceptionHandler(AccountBlockedException.class)
+    public ProblemDetail handleAccountBlocked(AccountBlockedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Cuenta Bloqueada");
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidOnboardingStepException.class)
+    public ProblemDetail handleInvalidOnboardingStep(InvalidOnboardingStepException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Paso de Onboarding Inválido");
+        return problem;
+    }
+
+    @ExceptionHandler(RoleAlreadyAssignedException.class)
+    public ProblemDetail handleRoleAlreadyAssigned(RoleAlreadyAssignedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Rol Ya Asignado");
+        return problem;
+    }
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ProblemDetail handleRoleNotFound(RoleNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Rol No Encontrado");
+        return problem;
+    }
+
+    @ExceptionHandler(KycRequiredException.class)
+    public ProblemDetail handleKycRequired(KycRequiredException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Verificación Requerida");
+        return problem;
+    }
+
+    @ExceptionHandler(UnauthorizedKycAccessException.class)
+    public ProblemDetail handleUnauthorizedKycAccess(UnauthorizedKycAccessException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Acceso KYC No Autorizado");
         return problem;
     }
 
