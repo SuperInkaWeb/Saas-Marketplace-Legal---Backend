@@ -32,14 +32,17 @@ public class EmailService {
         String html = loadTemplate("templates/email-otp-verification.html")
                 .replace("{{OTP_CODE}}", otpCode);
 
-        send(toEmail, "Verifica tu cuenta – Código de seguridad", html);
+        // Añadimos un pequeño identificador (timestamp) para evitar que Gmail agrupe los correos en un hilo
+        String uniqueId = String.valueOf(System.currentTimeMillis() % 10000);
+        send(toEmail, "Verifica tu cuenta – Código de seguridad #" + uniqueId, html);
     }
 
     public void sendPasswordResetEmail(String toEmail, String otpCode) {
         String html = loadTemplate("templates/email-password-reset.html")
                 .replace("{{OTP_CODE}}", otpCode);
 
-        send(toEmail, "Recuperación de contraseña – Código de seguridad", html);
+        String uniqueId = String.valueOf(System.currentTimeMillis() % 10000);
+        send(toEmail, "Recuperación de contraseña – Código de seguridad #" + uniqueId, html);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
