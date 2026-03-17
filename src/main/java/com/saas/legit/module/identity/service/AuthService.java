@@ -50,9 +50,10 @@ public class AuthService {
     // REGISTRO PARA CLIENTES
     @Transactional
     public void registerClient(ClientRegistrationRequest request) {
-        validateEmailNotTaken(request.email());
+        String email = request.email().toLowerCase();
+        validateEmailNotTaken(email);
 
-        User user = buildUser(request.email(), request.password(), request.firstName(), request.lastNameFather(),
+        User user = buildUser(email, request.password(), request.firstName(), request.lastNameFather(),
                 request.lastNameMother(), request.phoneNumber());
         user.getRoles().add(findRole(ROLE_CLIENT));
         userRepository.save(user);
@@ -65,9 +66,10 @@ public class AuthService {
     // REGISTRO PARA ABOGADOS
     @Transactional
     public void registerLawyer(LawyerRegistrationRequest request) {
-        validateEmailNotTaken(request.email());
+        String email = request.email().toLowerCase();
+        validateEmailNotTaken(email);
 
-        User user = buildUser(request.email(), request.password(), request.firstName(), request.lastNameFather(),
+        User user = buildUser(email, request.password(), request.firstName(), request.lastNameFather(),
                 request.lastNameMother(), request.phoneNumber());
         user.getRoles().add(findRole(ROLE_LAWYER));
         userRepository.save(user);
@@ -84,7 +86,8 @@ public class AuthService {
     // LOGIN
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailWithRoles(request.email()).orElseThrow(InvalidCredentialsException::new);
+        String email = request.email().toLowerCase();
+        User user = userRepository.findByEmailWithRoles(email).orElseThrow(InvalidCredentialsException::new);
 
         if (!user.getIsActive()) {
             throw new InvalidCredentialsException();
@@ -107,9 +110,10 @@ public class AuthService {
 
     @Transactional
     public AuthResponse verifyAccountOtp(String email, String code) {
-        otpService.validateOtp(email, code, OtpPurpose.ACCOUNT_VERIFICATION);
+        String normalizedEmail = email.toLowerCase();
+        otpService.validateOtp(normalizedEmail, code, OtpPurpose.ACCOUNT_VERIFICATION);
 
-        User user = userRepository.findByEmailWithRoles(email).orElseThrow();
+        User user = userRepository.findByEmailWithRoles(normalizedEmail).orElseThrow();
         user.setIsActive(true);
         userRepository.save(user);
 
@@ -136,14 +140,15 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void validateResetOtp(String email, String code) {
-        otpService.checkOtpValidity(email, code, OtpPurpose.PASSWORD_RESET);
+        otpService.checkOtpValidity(email.toLowerCase(), code, OtpPurpose.PASSWORD_RESET);
     }
 
     @Transactional
     public void resetPassword(String email, String code, String newPassword) {
-        otpService.validateOtp(email, code, OtpPurpose.PASSWORD_RESET);
+        String normalizedEmail = email.toLowerCase();
+        otpService.validateOtp(normalizedEmail, code, OtpPurpose.PASSWORD_RESET);
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(InvalidCredentialsException::new);
 
         user.setPasswordSecret(passwordEncoder.encode(newPassword));
