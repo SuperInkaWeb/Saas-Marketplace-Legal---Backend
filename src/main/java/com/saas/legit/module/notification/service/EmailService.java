@@ -32,7 +32,6 @@ public class EmailService {
         String html = loadTemplate("templates/email-otp-verification.html")
                 .replace("{{OTP_CODE}}", otpCode);
 
-        // Añadimos un pequeño identificador (timestamp) para evitar que Gmail agrupe los correos en un hilo
         String uniqueId = String.valueOf(System.currentTimeMillis() % 10000);
         send(toEmail, "Verifica tu cuenta – Código de seguridad #" + uniqueId, html);
     }
