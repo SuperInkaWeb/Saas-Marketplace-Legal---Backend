@@ -23,17 +23,22 @@ CREATE TABLE IF NOT EXISTS users (
     last_name_father VARCHAR(100) NOT NULL,
     last_name_mother VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
-    is_active BOOLEAN DEFAULT FALSE,
+    role_id BIGINT REFERENCES roles(id),
+    onboarding_step VARCHAR(30) NOT NULL DEFAULT 'COMPLETED',
+    account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     version BIGINT DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE IF NOT EXISTS user_roles (
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
+CREATE TABLE IF NOT EXISTS otp_verifications (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    purpose VARCHAR(50) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS identity_documents (
@@ -78,17 +83,6 @@ CREATE TABLE IF NOT EXISTS law_firms (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE IF NOT EXISTS client_profiles (
-    id BIGSERIAL PRIMARY KEY,
-    public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-    user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    company_name VARCHAR(150),
-    billing_address TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE
-);
-
 CREATE TABLE IF NOT EXISTS lawyer_profiles (
     id BIGSERIAL PRIMARY KEY,
     public_id UUID UNIQUE DEFAULT gen_random_uuid(),
@@ -113,6 +107,17 @@ CREATE TABLE IF NOT EXISTS lawyer_profiles (
         setweight(to_tsvector('spanish', coalesce(city,'')), 'A') ||
         setweight(to_tsvector('spanish', coalesce(bio,'')), 'B')
     ) STORED,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE IF NOT EXISTS client_profiles (
+    id BIGSERIAL PRIMARY KEY,
+    public_id UUID UNIQUE DEFAULT gen_random_uuid(),
+    user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_name VARCHAR(150),
+    billing_address TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -173,7 +178,7 @@ CREATE TABLE IF NOT EXISTS case_requests (
     id BIGSERIAL PRIMARY KEY,
     public_id UUID UNIQUE DEFAULT gen_random_uuid(),
     client_profile_id BIGINT NOT NULL REFERENCES client_profiles(id) ON DELETE CASCADE,
-    specialty_id BIGINT REFERENCES specialties(id) ON DELETE SET NULL, -- Matching por especialidad
+    specialty_id BIGINT REFERENCES specialties(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     budget DECIMAL(10,2),
@@ -275,35 +280,21 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_lawyer_search_vector ON lawyer_profiles USING GIN (search_vector);
-
 CREATE INDEX IF NOT EXISTS idx_lawyer_profiles_city ON lawyer_profiles(city);
 CREATE INDEX IF NOT EXISTS idx_lawyer_profiles_country ON lawyer_profiles(country);
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_lawyer_slug ON lawyer_profiles(slug) WHERE deleted_at IS NULL;
-
-CREATE INDEX IF NOT EXISTS idx_lawyers_marketplace
-    ON lawyer_profiles(is_verified, rating_avg DESC)
-    WHERE deleted_at IS NULL AND is_verified = TRUE;
-
-CREATE INDEX IF NOT EXISTS idx_lawyers_location_geo
-    ON lawyer_profiles USING gist (ll_to_earth(latitude, longitude));
-
-CREATE INDEX IF NOT EXISTS idx_appointments_calendar
-    ON appointments(lawyer_profile_id, scheduled_start)
-    WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
-
+CREATE INDEX IF NOT EXISTS idx_lawyers_marketplace ON lawyer_profiles(is_verified, rating_avg DESC) WHERE deleted_at IS NULL AND is_verified = TRUE;
+CREATE INDEX IF NOT EXISTS idx_lawyers_location_geo ON lawyer_profiles USING gist (ll_to_earth(latitude, longitude));
+CREATE INDEX IF NOT EXISTS idx_appointments_calendar ON appointments(lawyer_profile_id, scheduled_start) WHERE status NOT IN ('CANCELLED', 'NO_SHOW');
 CREATE INDEX IF NOT EXISTS idx_case_requests_client ON case_requests(client_profile_id);
 CREATE INDEX IF NOT EXISTS idx_case_requests_specialty ON case_requests(specialty_id);
 CREATE INDEX IF NOT EXISTS idx_case_requests_status ON case_requests(status);
 CREATE INDEX IF NOT EXISTS idx_lawyer_proposals_lawyer ON lawyer_proposals(lawyer_profile_id);
 CREATE INDEX IF NOT EXISTS idx_lawyer_proposals_case ON lawyer_proposals(case_request_id);
-
 CREATE INDEX IF NOT EXISTS idx_documents_is_template ON documents(is_template);
-
 CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_name, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_new_values ON audit_logs USING GIN (new_values);
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(status);
-
 CREATE INDEX IF NOT EXISTS idx_fk_lawyer_specialties ON lawyer_specialties(specialty_id);
 CREATE INDEX IF NOT EXISTS idx_fk_payments_appointment ON payments(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_fk_reviews_lawyer ON reviews(lawyer_profile_id);
