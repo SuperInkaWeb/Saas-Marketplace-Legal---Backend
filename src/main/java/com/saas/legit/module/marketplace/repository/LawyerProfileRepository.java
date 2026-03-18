@@ -15,6 +15,9 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
 
     boolean existsBySlugLawyerProfile(String slug);
 
-    @Query("SELECT lp FROM LawyerProfile lp WHERE lp.user.id = :userId")
+    @Query("SELECT lp FROM LawyerProfile lp WHERE lp.user.idUser = :userId")
     Optional<LawyerProfile> findByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT lp FROM LawyerProfile lp WHERE lp.slugLawyerProfile = :slug")
+    Optional<LawyerProfile> findBySlug(@Param("slug") String slug);
 }

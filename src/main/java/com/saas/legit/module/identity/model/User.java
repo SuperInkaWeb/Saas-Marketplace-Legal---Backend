@@ -49,11 +49,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "onboarding_step", nullable = false, length = 30)
-    private OnboardingStep onboardingStep = OnboardingStep.ACCOUNT_CREATED;
+    private OnboardingStep onboardingStep;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_status", nullable = false, length = 20)
-    private AccountStatus accountStatus = AccountStatus.PENDING;
+    private AccountStatus accountStatus;
 
     @Version
     private Long version;
@@ -68,6 +68,9 @@ public class User {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    @Column(name = "avatar_url")
+    private String avatarURL;
 
     public User() {
     }

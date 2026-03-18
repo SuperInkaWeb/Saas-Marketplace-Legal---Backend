@@ -30,18 +30,80 @@ public class UserService {
     public UserMeResponse getMe(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
 
-        boolean hasProfile = resolveHasProfile(user);
+        String role = user.getRoleName();
+        boolean hasProfile = false;
+        String companyName = null;
+        String billingAddress = null;
+        String companyLogoUrl = null;
+        String bio = null;
+        String city = null;
+        String country = null;
+        java.math.BigDecimal hourlyRate = null;
+        String currency = null;
+        String barRegistrationNumber = null;
+        String barAssociation = null;
+        String lawFirmLogoUrl = null;
+        String lawFirmCoverUrl = null;
+        String slug = null;
+
+        if (ROLE_CLIENT.equals(role)) {
+            var profileOpt = clientProfileRepository.findByUser(user);
+            if (profileOpt.isPresent()) {
+                hasProfile = true;
+                companyName = profileOpt.get().getCompanyName();
+                billingAddress = profileOpt.get().getBillingAddress();
+                companyLogoUrl = profileOpt.get().getCompanyURL();
+            }
+        } else if (ROLE_LAWYER.equals(role)) {
+            var profileOpt = lawyerProfileRepository.findByUserId(user.getIdUser());
+            if (profileOpt.isPresent()) {
+                hasProfile = true;
+                bio = profileOpt.get().getBioLawyer();
+                city = profileOpt.get().getCity();
+                country = profileOpt.get().getCountry();
+                hourlyRate = profileOpt.get().getHourlyRate();
+                currency = profileOpt.get().getCurrency();
+                barRegistrationNumber = profileOpt.get().getBarRegistrationNumber();
+                barAssociation = profileOpt.get().getBarAssociation();
+                slug = profileOpt.get().getSlugLawyerProfile();
+                
+                var lawFirm = profileOpt.get().getLawFirm();
+                if (lawFirm != null) {
+                    lawFirmLogoUrl = lawFirm.getLogoUrl();
+                    lawFirmCoverUrl = lawFirm.getCoverPhotoUrl();
+                }
+            }
+        }
+
         boolean isVerified = resolveIsVerified(user);
 
         return new UserMeResponse(
                 user.getPublicId(),
                 user.getEmail(),
+                user.getFirstName(),
+                user.getLastNameFather(),
+                user.getLastNameMother(),
+                user.getPhoneNumber(),
+                slug,
                 user.getFullName(),
-                user.getRoleName(),
+                role,
                 user.getOnboardingStep().name(),
                 user.getAccountStatus().name(),
                 hasProfile,
-                isVerified
+                isVerified,
+                user.getAvatarURL(),
+                companyName,
+                billingAddress,
+                companyLogoUrl,
+                bio,
+                city,
+                country,
+                hourlyRate,
+                currency,
+                barRegistrationNumber,
+                barAssociation,
+                lawFirmLogoUrl,
+                lawFirmCoverUrl
         );
     }
 

@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,6 +28,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final com.saas.legit.module.identity.repository.ClientProfileRepository clientProfileRepository;
+    private final com.saas.legit.module.marketplace.repository.LawyerProfileRepository lawyerProfileRepository;
 
     // ── REGISTER (unified, no roles, no profiles) ──────────────────────
 
@@ -129,7 +133,48 @@ public class AuthService {
 
     private AuthResponse buildAuthResponse(User user) {
         String role = user.getRoleName();
-        Long tenantId = null; // resolved in future via LawyerProfile if needed
+        Long tenantId = null;
+
+        String companyName = null;
+        String billingAddress = null;
+        String companyLogoUrl = null;
+        String bio = null;
+        String city = null;
+        String country = null;
+        BigDecimal hourlyRate = null;
+        String currency = null;
+        String barRegistrationNumber = null;
+        String barAssociation = null;
+        String lawFirmLogoUrl = null;
+        String lawFirmCoverUrl = null;
+        String slug = null;
+
+        if ("CLIENT".equals(role)) {
+            var profile = clientProfileRepository.findByUser(user);
+            if (profile.isPresent()) {
+                companyName = profile.get().getCompanyName();
+                billingAddress = profile.get().getBillingAddress();
+                companyLogoUrl = profile.get().getCompanyURL();
+            }
+        } else if ("LAWYER".equals(role)) {
+            var profile = lawyerProfileRepository.findByUserId(user.getIdUser());
+            if (profile.isPresent()) {
+                bio = profile.get().getBioLawyer();
+                city = profile.get().getCity();
+                country = profile.get().getCountry();
+                hourlyRate = profile.get().getHourlyRate();
+                currency = profile.get().getCurrency();
+                barRegistrationNumber = profile.get().getBarRegistrationNumber();
+                barAssociation = profile.get().getBarAssociation();
+                slug = profile.get().getSlugLawyerProfile();
+
+                var lawFirm = profile.get().getLawFirm();
+                if (lawFirm != null) {
+                    lawFirmLogoUrl = lawFirm.getLogoUrl();
+                    lawFirmCoverUrl = lawFirm.getCoverPhotoUrl();
+                }
+            }
+        }
 
         String token = jwtService.generateToken(
                 user.getIdUser(), user.getEmail(), role, tenantId
@@ -138,10 +183,28 @@ public class AuthService {
         return new AuthResponse(
                 user.getPublicId(),
                 user.getEmail(),
+                user.getFirstName(),
+                user.getLastNameFather(),
+                user.getLastNameMother(),
+                user.getPhoneNumber(),
+                slug,
                 user.getFullName(),
                 role,
                 user.getOnboardingStep().name(),
-                token
+                token,
+                user.getAvatarURL(),
+                companyName,
+                billingAddress,
+                companyLogoUrl,
+                bio,
+                city,
+                country,
+                hourlyRate,
+                currency,
+                barRegistrationNumber,
+                barAssociation,
+                lawFirmLogoUrl,
+                lawFirmCoverUrl
         );
     }
 }

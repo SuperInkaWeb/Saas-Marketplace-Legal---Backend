@@ -46,6 +46,9 @@ public class ClientProfile {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "company_logo_url")
+    private String companyURL;
+
     public ClientProfile() {}
 
     public ClientProfile(User user, String companyName, String billingAddress) {

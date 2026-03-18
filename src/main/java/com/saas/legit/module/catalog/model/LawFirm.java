@@ -39,6 +39,12 @@ public class LawFirm {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "cover_photo_url")
+    private String coverPhotoUrl;
+
     @PrePersist
     protected void onCreate() {
         if (publicId == null) {
