@@ -27,9 +27,5 @@ public record AuthResponse(
                 BigDecimal hourlyRate,
                 String currency,
                 String barRegistrationNumber,
-                String barAssociation,
-
-                // Law Firm fields (for lawyers)
-                String lawFirmLogoUrl,
-                String lawFirmCoverUrl) {
+    String barAssociation) {
 }

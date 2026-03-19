@@ -45,18 +45,6 @@ public class ProfileController {
         return ResponseEntity.ok(Map.of("url", url));
     }
 
-    @PatchMapping("/law-firm/logo")
-    public ResponseEntity<?> updateLawFirmLogo(@RequestParam("file") MultipartFile file) throws IOException {
-        String url = profileService.updateLawFirmLogo(SecurityUtils.getCurrentUser().userId(), file);
-        return ResponseEntity.ok(Map.of("url", url));
-    }
-
-    @PatchMapping("/law-firm/cover")
-    public ResponseEntity<?> updateLawFirmCover(@RequestParam("file") MultipartFile file) throws IOException {
-        String url = profileService.updateLawFirmCover(SecurityUtils.getCurrentUser().userId(), file);
-        return ResponseEntity.ok(Map.of("url", url));
-    }
-
     @GetMapping("/public/{slug}")
     public ResponseEntity<PublicProfileResponse> getPublicProfile(@PathVariable String slug) {
         return ResponseEntity.ok(profileService.getPublicProfile(slug));

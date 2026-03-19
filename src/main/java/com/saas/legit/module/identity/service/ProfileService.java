@@ -1,14 +1,15 @@
 package com.saas.legit.module.identity.service;
 
 import com.saas.legit.core.service.CloudinaryService;
-import com.saas.legit.module.catalog.model.LawFirm;
-import com.saas.legit.module.catalog.repository.LawFirmRepository;
+
+import com.saas.legit.module.identity.dto.PublicProfileResponse;
 import com.saas.legit.module.identity.dto.UpdateClientProfileRequest;
 import com.saas.legit.module.identity.dto.UpdateLawyerProfileRequest;
 import com.saas.legit.module.identity.model.ClientProfile;
 import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
 import com.saas.legit.module.identity.repository.UserRepository;
+import com.saas.legit.module.marketplace.exception.LawyerProfileNotFoundException;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final LawyerProfileRepository lawyerProfileRepository;
-    private final LawFirmRepository lawFirmRepository;
+
 
     @Transactional
     public void updateClientProfile(Long userId, UpdateClientProfileRequest request) {
@@ -50,13 +51,15 @@ public class ProfileService {
     public void updateLawyerProfile(Long userId, UpdateLawyerProfileRequest request) {
         User user = userRepository.findById(userId).orElseThrow();
         LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Lawyer profile not found"));
+                .orElseThrow(LawyerProfileNotFoundException::new);
 
         updateUserBasicInfo(user, request.firstName(), request.lastNameFather(), request.lastNameMother(), request.phoneNumber());
 
         profile.setBioLawyer(request.bio());
         profile.setCity(request.city());
         profile.setCountry(request.country());
+        profile.setLatitude(request.latitude());
+        profile.setLongitude(request.longitude());
         profile.setHourlyRate(request.hourlyRate());
         profile.setCurrency(request.currency());
         profile.setBarRegistrationNumber(request.barRegistrationNumber());
@@ -94,66 +97,25 @@ public class ProfileService {
         return url;
     }
 
-    @Transactional
-    public String updateLawFirmLogo(Long userId, MultipartFile file) throws IOException {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Perfil de abogado no encontrado"));
-        
-        LawFirm lawFirm = profile.getLawFirm();
-        if (lawFirm == null) {
-            lawFirm = new LawFirm();
-            lawFirm.setNameLawFirm("Mi Despacho Legal");
-            lawFirm = lawFirmRepository.save(lawFirm);
-            profile.setLawFirm(lawFirm);
-            lawyerProfileRepository.save(profile);
-        }
-
-        String url = cloudinaryService.uploadFile(file, "law_firm_logos");
-        lawFirm.setLogoUrl(url);
-        lawFirmRepository.save(lawFirm);
-        return url;
-    }
-
-    @Transactional
-    public String updateLawFirmCover(Long userId, MultipartFile file) throws IOException {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Perfil de abogado no encontrado"));
-        
-        LawFirm lawFirm = profile.getLawFirm();
-        if (lawFirm == null) {
-            lawFirm = new LawFirm();
-            lawFirm.setNameLawFirm("Mi Despacho Legal");
-            lawFirm = lawFirmRepository.save(lawFirm);
-            profile.setLawFirm(lawFirm);
-            lawyerProfileRepository.save(profile);
-        }
-
-        String url = cloudinaryService.uploadFile(file, "law_firm_covers");
-        lawFirm.setCoverPhotoUrl(url);
-        lawFirmRepository.save(lawFirm);
-        return url;
-    }
-
     @Transactional(readOnly = true)
-    public com.saas.legit.module.identity.dto.PublicProfileResponse getPublicProfile(String slug) {
+    public PublicProfileResponse getPublicProfile(String slug) {
         LawyerProfile profile = lawyerProfileRepository.findBySlug(slug)
-                .orElseThrow(() -> new RuntimeException("Perfil público no encontrado: " + slug));
+                .orElseThrow(LawyerProfileNotFoundException::new);
 
         User user = profile.getUser();
-        LawFirm lawFirm = profile.getLawFirm();
 
-        List<com.saas.legit.module.identity.dto.PublicProfileResponse.SpecialtyDTO> specialtyDTOs = profile.getSpecialties().stream()
-                .map(s -> new com.saas.legit.module.identity.dto.PublicProfileResponse.SpecialtyDTO(s.getName(), s.getDescription()))
+        List<PublicProfileResponse.SpecialtyDTO> specialtyDTOs = profile.getSpecialties().stream()
+                .map(s -> new PublicProfileResponse.SpecialtyDTO(s.getName(), s.getDescription()))
                 .toList();
 
-        List<com.saas.legit.module.identity.dto.PublicProfileResponse.ScheduleDTO> scheduleDTOs = profile.getSchedules().stream()
-                .map(s -> new com.saas.legit.module.identity.dto.PublicProfileResponse.ScheduleDTO(
+        List<PublicProfileResponse.ScheduleDTO> scheduleDTOs = profile.getSchedules().stream()
+                .map(s -> new PublicProfileResponse.ScheduleDTO(
                         s.getDayOfWeek(),
                         s.getStartTime().toString(),
                         s.getEndTime().toString()))
                 .toList();
 
-        return new com.saas.legit.module.identity.dto.PublicProfileResponse(
+        return new PublicProfileResponse(
                 user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
                 user.getAvatarURL(),
                 profile.getBioLawyer(),
@@ -163,9 +125,6 @@ public class ProfileService {
                 profile.getCurrency(),
                 profile.getBarAssociation(),
                 profile.getBarRegistrationNumber(),
-                lawFirm != null ? lawFirm.getNameLawFirm() : null,
-                lawFirm != null ? lawFirm.getLogoUrl() : null,
-                lawFirm != null ? lawFirm.getCoverPhotoUrl() : null,
                 specialtyDTOs,
                 scheduleDTOs
         );

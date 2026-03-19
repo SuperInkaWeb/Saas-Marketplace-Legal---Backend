@@ -13,9 +13,6 @@ public record PublicProfileResponse(
     String currency,
     String barAssociation,
     String barRegistrationNumber,
-    String lawFirmName,
-    String lawFirmLogoUrl,
-    String lawFirmCoverUrl,
     List<SpecialtyDTO> specialties,
     List<ScheduleDTO> schedules
 ) {

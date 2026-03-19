@@ -1,6 +1,7 @@
 package com.saas.legit.module.identity.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public record UserMeResponse(
@@ -31,7 +32,13 @@ public record UserMeResponse(
                 String barRegistrationNumber,
                 String barAssociation,
 
-                // Law Firm fields (for lawyers)
-                String lawFirmLogoUrl,
-                String lawFirmCoverUrl) {
+                // Specialties (for lawyers)
+                List<SpecialtyInfo> specialties,
+
+                // Schedules (for lawyers)
+                List<ScheduleInfo> schedules) {
+
+    public record SpecialtyInfo(Long id, String name) {}
+    public record ScheduleInfo(Long id, Integer dayOfWeek, String startTime, String endTime) {}
 }
+

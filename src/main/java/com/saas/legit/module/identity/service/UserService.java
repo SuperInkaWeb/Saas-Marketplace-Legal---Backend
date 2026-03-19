@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -42,9 +44,10 @@ public class UserService {
         String currency = null;
         String barRegistrationNumber = null;
         String barAssociation = null;
-        String lawFirmLogoUrl = null;
-        String lawFirmCoverUrl = null;
+
         String slug = null;
+        List<UserMeResponse.SpecialtyInfo> specialties = Collections.emptyList();
+        List<UserMeResponse.ScheduleInfo> schedules = Collections.emptyList();
 
         if (ROLE_CLIENT.equals(role)) {
             var profileOpt = clientProfileRepository.findByUser(user);
@@ -57,21 +60,30 @@ public class UserService {
         } else if (ROLE_LAWYER.equals(role)) {
             var profileOpt = lawyerProfileRepository.findByUserId(user.getIdUser());
             if (profileOpt.isPresent()) {
+                LawyerProfile lp = profileOpt.get();
                 hasProfile = true;
-                bio = profileOpt.get().getBioLawyer();
-                city = profileOpt.get().getCity();
-                country = profileOpt.get().getCountry();
-                hourlyRate = profileOpt.get().getHourlyRate();
-                currency = profileOpt.get().getCurrency();
-                barRegistrationNumber = profileOpt.get().getBarRegistrationNumber();
-                barAssociation = profileOpt.get().getBarAssociation();
-                slug = profileOpt.get().getSlugLawyerProfile();
-                
-                var lawFirm = profileOpt.get().getLawFirm();
-                if (lawFirm != null) {
-                    lawFirmLogoUrl = lawFirm.getLogoUrl();
-                    lawFirmCoverUrl = lawFirm.getCoverPhotoUrl();
-                }
+                bio = lp.getBioLawyer();
+                city = lp.getCity();
+                country = lp.getCountry();
+                hourlyRate = lp.getHourlyRate();
+                currency = lp.getCurrency();
+                barRegistrationNumber = lp.getBarRegistrationNumber();
+                barAssociation = lp.getBarAssociation();
+                slug = lp.getSlugLawyerProfile();
+
+
+
+                specialties = lp.getSpecialties().stream()
+                        .map(s -> new UserMeResponse.SpecialtyInfo(s.getId(), s.getName()))
+                        .toList();
+
+                schedules = lp.getSchedules().stream()
+                        .map(s -> new UserMeResponse.ScheduleInfo(
+                                s.getId(),
+                                s.getDayOfWeek(),
+                                s.getStartTime().toString(),
+                                s.getEndTime().toString()))
+                        .toList();
             }
         }
 
@@ -102,8 +114,8 @@ public class UserService {
                 currency,
                 barRegistrationNumber,
                 barAssociation,
-                lawFirmLogoUrl,
-                lawFirmCoverUrl
+                specialties,
+                schedules
         );
     }
 
@@ -124,10 +136,10 @@ public class UserService {
                     .orElse(false);
         }
         if (user.hasRole(ROLE_CLIENT)) {
-            // Clients are "verified" if they have a verified identity doc (optional)
             Optional<IdentityDocument> doc = identityDocumentRepository.findByUser(user);
             return doc.map(IdentityDocument::getIsVerified).orElse(false);
         }
         return false;
     }
 }
+

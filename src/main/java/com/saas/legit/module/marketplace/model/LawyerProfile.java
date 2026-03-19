@@ -1,6 +1,6 @@
 package com.saas.legit.module.marketplace.model;
 
-import com.saas.legit.module.catalog.model.LawFirm;
+
 import com.saas.legit.module.identity.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -34,9 +34,7 @@ public class LawyerProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "law_firm_id")
-    private LawFirm lawFirm;
+
 
     @Column(name = "slug", nullable = false, unique = true, length = 200)
     private String slugLawyerProfile;

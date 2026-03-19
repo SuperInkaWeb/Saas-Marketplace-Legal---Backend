@@ -145,8 +145,7 @@ public class AuthService {
         String currency = null;
         String barRegistrationNumber = null;
         String barAssociation = null;
-        String lawFirmLogoUrl = null;
-        String lawFirmCoverUrl = null;
+
         String slug = null;
 
         if ("CLIENT".equals(role)) {
@@ -168,11 +167,7 @@ public class AuthService {
                 barAssociation = profile.get().getBarAssociation();
                 slug = profile.get().getSlugLawyerProfile();
 
-                var lawFirm = profile.get().getLawFirm();
-                if (lawFirm != null) {
-                    lawFirmLogoUrl = lawFirm.getLogoUrl();
-                    lawFirmCoverUrl = lawFirm.getCoverPhotoUrl();
-                }
+
             }
         }
 
@@ -202,9 +197,7 @@ public class AuthService {
                 hourlyRate,
                 currency,
                 barRegistrationNumber,
-                barAssociation,
-                lawFirmLogoUrl,
-                lawFirmCoverUrl
+                barAssociation
         );
     }
 }

@@ -20,6 +20,10 @@ public record UpdateLawyerProfileRequest(
 
                 @NotBlank(message = "El país es obligatorio") String country,
 
+                BigDecimal latitude,
+
+                BigDecimal longitude,
+
                 @NotNull(message = "La tarifa por hora es obligatoria") BigDecimal hourlyRate,
 
                 @NotBlank(message = "La moneda es obligatoria") @Size(max = 3) String currency,
@@ -27,3 +31,4 @@ public record UpdateLawyerProfileRequest(
                 String barRegistrationNumber,
                 String barAssociation) {
 }
+
