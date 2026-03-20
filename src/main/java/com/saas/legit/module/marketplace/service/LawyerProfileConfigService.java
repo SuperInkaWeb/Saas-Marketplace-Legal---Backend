@@ -1,6 +1,8 @@
 package com.saas.legit.module.marketplace.service;
 
 
+import com.saas.legit.module.identity.exception.InvalidOnboardingStepException;
+import com.saas.legit.module.identity.model.OnboardingStep;
 import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.dto.*;
@@ -18,19 +20,44 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class LawyerProfileConfigService {
 
+    private static final String ROLE_LAWYER = "LAWYER";
     private final UserRepository userRepository;
     private final LawyerProfileRepository lawyerProfileRepository;
     private final LawyerScheduleRepository lawyerScheduleRepository;
     private final SpecialtyRepository specialtyRepository;
+
+    // ── CREATE LAWYER PROFILE ──────────────────────────────────────────
+
+    @Transactional
+    public void createLawyerProfile(Long userId, CreateLawyerProfileRequest request) {
+        User user = userRepository.findById(userId).orElseThrow();
+
+        requireStep(user);
+        requireRole(user);
+
+        if (lawyerProfileRepository.findByUserId(user.getIdUser()).isPresent()) {
+            user.setOnboardingStep(OnboardingStep.KYC_PENDING);
+            userRepository.save(user);
+            return;
+        }
+
+        String slug = generateUniqueSlug(user.getFirstName(), user.getLastNameFather());
+        LawyerProfile profile = new LawyerProfile(user, slug, request.city(), request.country());
+        lawyerProfileRepository.save(profile);
+
+        user.setOnboardingStep(OnboardingStep.KYC_PENDING);
+        userRepository.save(user);
+    }
 
 
     // ── GET FULL CONFIG ────────────────────────────────────────────────
@@ -187,6 +214,36 @@ public class LawyerProfileConfigService {
 
 
     // ── PRIVATE HELPERS ────────────────────────────────────────────────
+    private void requireStep(User user) {
+        if (user.getOnboardingStep() != OnboardingStep.PROFILE_PENDING) {
+            throw new InvalidOnboardingStepException(
+                    user.getOnboardingStep().name(), OnboardingStep.PROFILE_PENDING.name()
+            );
+        }
+    }
+
+    private void requireRole(User user) {
+        if (!user.hasRole(LawyerProfileConfigService.ROLE_LAWYER)) {
+            throw new InvalidOnboardingStepException(
+                    "ROL_INCORRECTO",
+                    "El rol del usuario debe ser " + LawyerProfileConfigService.ROLE_LAWYER
+            );
+        }
+    }
+
+    private String generateUniqueSlug(String firstName, String lastName) {
+        String base = Normalizer.normalize(firstName + "-" + lastName, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
+
+        String slug = base;
+        while (lawyerProfileRepository.existsBySlugLawyerProfile(slug)) {
+            slug = base + "-" + UUID.randomUUID().toString().substring(0, 8);
+        }
+        return slug;
+    }
 
     private ScheduleResponse toScheduleResponse(LawyerSchedule schedule) {
         return new ScheduleResponse(

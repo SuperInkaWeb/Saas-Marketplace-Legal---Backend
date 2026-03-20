@@ -1,8 +1,8 @@
 package com.saas.legit.module.identity.controller;
 
 import com.saas.legit.module.identity.dto.PublicProfileResponse;
-import com.saas.legit.module.identity.dto.UpdateClientProfileRequest;
-import com.saas.legit.module.identity.dto.UpdateLawyerProfileRequest;
+import com.saas.legit.module.client.dto.UpdateClientProfileRequest;
+import com.saas.legit.module.marketplace.dto.UpdateLawyerProfileRequest;
 import com.saas.legit.core.util.SecurityUtils;
 import com.saas.legit.module.identity.service.ProfileService;
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.saas.legit.module.identity.dto;
+package com.saas.legit.module.marketplace.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

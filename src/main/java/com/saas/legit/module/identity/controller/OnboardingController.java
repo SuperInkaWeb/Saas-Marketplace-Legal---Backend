@@ -1,7 +1,6 @@
 package com.saas.legit.module.identity.controller;
 
-import com.saas.legit.module.identity.dto.CreateClientProfileRequest;
-import com.saas.legit.module.identity.dto.CreateLawyerProfileRequest;
+import com.saas.legit.module.client.dto.CreateClientProfileRequest;
 import com.saas.legit.module.identity.dto.SelectRoleRequest;
 import com.saas.legit.module.identity.dto.UserMeResponse;
 import com.saas.legit.module.identity.service.OnboardingService;
@@ -36,22 +35,6 @@ public class OnboardingController {
             @Valid @RequestBody CreateClientProfileRequest request
     ) {
         onboardingService.createClientProfile(principal.userId(), request);
-        return ResponseEntity.ok(userService.getMe(principal.userId()));
-    }
-
-    @PostMapping("/profile/lawyer")
-    public ResponseEntity<UserMeResponse> createLawyerProfile(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserDetails principal,
-            @Valid @RequestBody CreateLawyerProfileRequest request
-    ) {
-        onboardingService.createLawyerProfile(principal.userId(), request);
-        return ResponseEntity.ok(userService.getMe(principal.userId()));
-    }
-
-    @GetMapping("/status")
-    public ResponseEntity<UserMeResponse> getOnboardingStatus(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserDetails principal
-    ) {
         return ResponseEntity.ok(userService.getMe(principal.userId()));
     }
 }
