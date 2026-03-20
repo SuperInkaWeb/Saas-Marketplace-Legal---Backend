@@ -25,4 +25,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     boolean hasOverlappingAppointments(@Param("lawyerId") Long lawyerId, 
                                        @Param("start") OffsetDateTime start, 
                                        @Param("end") OffsetDateTime end);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.lawyerProfile.idLawyerProfile = :lawyerId " +
+           "AND a.status = 'PENDING'")
+    int countPendingByLawyer(@Param("lawyerId") Long lawyerId);
 }

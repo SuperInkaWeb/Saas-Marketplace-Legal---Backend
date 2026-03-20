@@ -1,6 +1,8 @@
 package com.saas.legit.module.marketplace.service;
 
 
+import com.saas.legit.module.appointment.repository.AppointmentRepository;
+import com.saas.legit.module.identity.dto.PublicProfileResponse;
 import com.saas.legit.module.identity.exception.InvalidOnboardingStepException;
 import com.saas.legit.module.identity.model.OnboardingStep;
 import com.saas.legit.module.identity.model.User;
@@ -8,18 +10,27 @@ import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.dto.*;
 import com.saas.legit.module.marketplace.exception.LawyerProfileNotFoundException;
 import com.saas.legit.module.marketplace.exception.ScheduleConflictException;
+import com.saas.legit.module.marketplace.exception.ScheduleNotFoundException;
 import com.saas.legit.module.marketplace.exception.SpecialtyNotFoundException;
+import com.saas.legit.module.marketplace.exception.UnauthorizedAccessException;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import com.saas.legit.module.marketplace.model.LawyerSchedule;
+import com.saas.legit.module.marketplace.model.Review;
 import com.saas.legit.module.marketplace.model.Specialty;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
+import com.saas.legit.module.marketplace.repository.LawyerProposalRepository;
 import com.saas.legit.module.marketplace.repository.LawyerScheduleRepository;
+import com.saas.legit.module.marketplace.repository.ReviewRepository;
 import com.saas.legit.module.marketplace.repository.SpecialtyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalTime;
 import java.util.HashSet;
@@ -31,10 +42,14 @@ import java.util.UUID;
 public class LawyerProfileConfigService {
 
     private static final String ROLE_LAWYER = "LAWYER";
+
     private final UserRepository userRepository;
     private final LawyerProfileRepository lawyerProfileRepository;
     private final LawyerScheduleRepository lawyerScheduleRepository;
     private final SpecialtyRepository specialtyRepository;
+    private final ReviewRepository reviewRepository;
+    private final LawyerProposalRepository lawyerProposalRepository;
+    private final AppointmentRepository appointmentRepository;
 
     // ── CREATE LAWYER PROFILE ──────────────────────────────────────────
 
@@ -59,15 +74,38 @@ public class LawyerProfileConfigService {
         userRepository.save(user);
     }
 
+    // ── UPDATE LAWYER PROFILE ──────────────────────────────────────────
+
+    @Transactional
+    public void updateProfile(Long userId, UpdateLawyerProfileRequest request) {
+        User user = userRepository.findById(userId).orElseThrow();
+        LawyerProfile profile = findProfileByUserId(userId);
+
+        user.setFirstName(request.firstName());
+        user.setLastNameFather(request.lastNameFather());
+        user.setLastNameMother(request.lastNameMother());
+        user.setPhoneNumber(request.phoneNumber());
+
+        profile.setBioLawyer(request.bio());
+        profile.setCity(request.city());
+        profile.setCountry(request.country());
+        profile.setLatitude(request.latitude());
+        profile.setLongitude(request.longitude());
+        profile.setHourlyRate(request.hourlyRate());
+        profile.setCurrency(request.currency());
+        profile.setBarRegistrationNumber(request.barRegistrationNumber());
+        profile.setBarAssociation(request.barAssociation());
+
+        userRepository.save(user);
+        lawyerProfileRepository.save(profile);
+    }
 
     // ── GET FULL CONFIG ────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public LawyerProfileConfigResponse getMyProfileConfig(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
-
+        LawyerProfile profile = findProfileByUserId(userId);
 
         List<LawyerProfileConfigResponse.SpecialtyInfo> specialtyInfos = profile.getSpecialties().stream()
                 .map(s -> new LawyerProfileConfigResponse.SpecialtyInfo(s.getId(), s.getName(), s.getDescription()))
@@ -109,6 +147,50 @@ public class LawyerProfileConfigService {
         );
     }
 
+    // ── PUBLIC PROFILE (by slug) ──────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public PublicProfileResponse getPublicProfile(String slug) {
+        LawyerProfile profile = lawyerProfileRepository.findBySlug(slug)
+                .orElseThrow(LawyerProfileNotFoundException::new);
+
+        User user = profile.getUser();
+
+        List<PublicProfileResponse.SpecialtyDTO> specialtyDTOs = profile.getSpecialties().stream()
+                .map(s -> new PublicProfileResponse.SpecialtyDTO(s.getName(), s.getDescription()))
+                .toList();
+
+        List<PublicProfileResponse.ScheduleDTO> scheduleDTOs = profile.getSchedules().stream()
+                .map(s -> new PublicProfileResponse.ScheduleDTO(
+                        s.getDayOfWeek(),
+                        s.getStartTime().toString(),
+                        s.getEndTime().toString()))
+                .toList();
+
+        return new PublicProfileResponse(
+                user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
+                user.getAvatarURL(),
+                profile.getBioLawyer(),
+                profile.getCity(),
+                profile.getCountry(),
+                profile.getHourlyRate(),
+                profile.getCurrency(),
+                profile.getBarAssociation(),
+                profile.getBarRegistrationNumber(),
+                specialtyDTOs,
+                scheduleDTOs
+        );
+    }
+
+    // ── SEARCH LAWYERS (marketplace) ──────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public Page<LawyerSearchResponse> searchLawyers(String city, Long specialtyId, BigDecimal minRating, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<LawyerProfile> profiles = lawyerProfileRepository.searchVerifiedLawyers(city, specialtyId, minRating, pageable);
+        return profiles.map(this::toSearchResponse);
+    }
+
     // ── SPECIALTIES ────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -120,8 +202,7 @@ public class LawyerProfileConfigService {
 
     @Transactional
     public void updateSpecialties(Long userId, UpdateSpecialtiesRequest request) {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
+        LawyerProfile profile = findProfileByUserId(userId);
 
         List<Specialty> specialties = specialtyRepository.findAllByIdIn(request.specialtyIds());
 
@@ -141,8 +222,7 @@ public class LawyerProfileConfigService {
 
     @Transactional(readOnly = true)
     public List<ScheduleResponse> getMySchedules(Long userId) {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
+        LawyerProfile profile = findProfileByUserId(userId);
 
         return lawyerScheduleRepository
                 .findByLawyerProfileOrderByDayOfWeekAscStartTimeAsc(profile)
@@ -153,8 +233,7 @@ public class LawyerProfileConfigService {
 
     @Transactional
     public ScheduleResponse addSchedule(Long userId, ScheduleRequest request) {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
+        LawyerProfile profile = findProfileByUserId(userId);
 
         LawyerSchedule schedule = new LawyerSchedule();
         schedule.setLawyerProfile(profile);
@@ -174,14 +253,13 @@ public class LawyerProfileConfigService {
 
     @Transactional
     public ScheduleResponse updateSchedule(Long userId, Long scheduleId, ScheduleRequest request) {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
+        LawyerProfile profile = findProfileByUserId(userId);
 
         LawyerSchedule schedule = lawyerScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new RuntimeException("Horario no encontrado"));
+                .orElseThrow(ScheduleNotFoundException::new);
 
         if (!schedule.getLawyerProfile().getIdLawyerProfile().equals(profile.getIdLawyerProfile())) {
-            throw new RuntimeException("No tienes permiso para modificar este horario");
+            throw new UnauthorizedAccessException("horario");
         }
 
         schedule.setDayOfWeek(request.dayOfWeek());
@@ -199,21 +277,78 @@ public class LawyerProfileConfigService {
 
     @Transactional
     public void deleteSchedule(Long userId, Long scheduleId) {
-        LawyerProfile profile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(LawyerProfileNotFoundException::new);
+        LawyerProfile profile = findProfileByUserId(userId);
 
         LawyerSchedule schedule = lawyerScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new RuntimeException("Horario no encontrado"));
+                .orElseThrow(ScheduleNotFoundException::new);
 
         if (!schedule.getLawyerProfile().getIdLawyerProfile().equals(profile.getIdLawyerProfile())) {
-            throw new RuntimeException("No tienes permiso para eliminar este horario");
+            throw new UnauthorizedAccessException("horario");
         }
 
         lawyerScheduleRepository.delete(schedule);
     }
 
+    // ── REVIEWS ───────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getMyReviews(Long userId) {
+        LawyerProfile profile = findProfileByUserId(userId);
+
+        return reviewRepository.findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(profile.getIdLawyerProfile())
+                .stream()
+                .map(this::toReviewResponse)
+                .toList();
+    }
+
+    // ── PROPOSALS ─────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<LawyerProposalResponse> getMyProposals(Long userId) {
+        LawyerProfile profile = findProfileByUserId(userId);
+
+        return lawyerProposalRepository
+                .findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(profile.getIdLawyerProfile())
+                .stream()
+                .map(proposal -> LawyerProposalResponse.builder()
+                        .id(proposal.getId())
+                        .lawyerName(profile.getUser().getFirstName() + " " + profile.getUser().getLastNameFather())
+                        .lawyerPublicId(profile.getPublicId().toString())
+                        .proposalText(proposal.getProposalText())
+                        .proposedFee(proposal.getProposedFee())
+                        .status(proposal.getStatus())
+                        .createdAt(proposal.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    // ── DASHBOARD STATS ───────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public DashboardStatsResponse getDashboardStats(Long userId) {
+        LawyerProfile profile = findProfileByUserId(userId);
+        Long profileId = profile.getIdLawyerProfile();
+
+        int pendingAppointments = appointmentRepository.countPendingByLawyer(profileId);
+        int totalProposals = lawyerProposalRepository
+                .findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(profileId).size();
+
+        return new DashboardStatsResponse(
+                pendingAppointments,
+                totalProposals,
+                profile.getRatingAvg(),
+                profile.getReviewCount()
+        );
+    }
+
 
     // ── PRIVATE HELPERS ────────────────────────────────────────────────
+
+    private LawyerProfile findProfileByUserId(Long userId) {
+        return lawyerProfileRepository.findByUserId(userId)
+                .orElseThrow(LawyerProfileNotFoundException::new);
+    }
+
     private void requireStep(User user) {
         if (user.getOnboardingStep() != OnboardingStep.PROFILE_PENDING) {
             throw new InvalidOnboardingStepException(
@@ -223,10 +358,10 @@ public class LawyerProfileConfigService {
     }
 
     private void requireRole(User user) {
-        if (!user.hasRole(LawyerProfileConfigService.ROLE_LAWYER)) {
+        if (!user.hasRole(ROLE_LAWYER)) {
             throw new InvalidOnboardingStepException(
                     "ROL_INCORRECTO",
-                    "El rol del usuario debe ser " + LawyerProfileConfigService.ROLE_LAWYER
+                    "El rol del usuario debe ser " + ROLE_LAWYER
             );
         }
     }
@@ -252,6 +387,39 @@ public class LawyerProfileConfigService {
                 schedule.getStartTime().toString(),
                 schedule.getEndTime().toString(),
                 schedule.getIsActive()
+        );
+    }
+
+    private ReviewResponse toReviewResponse(Review review) {
+        String clientName = review.getClientProfile().getUser().getFirstName()
+                + " " + review.getClientProfile().getUser().getLastNameFather();
+        return new ReviewResponse(
+                clientName,
+                review.getRating(),
+                review.getComment(),
+                review.getCreatedAt()
+        );
+    }
+
+    private LawyerSearchResponse toSearchResponse(LawyerProfile profile) {
+        User user = profile.getUser();
+        List<String> specialtyNames = profile.getSpecialties().stream()
+                .map(Specialty::getName)
+                .toList();
+
+        return new LawyerSearchResponse(
+                profile.getPublicId(),
+                profile.getSlugLawyerProfile(),
+                user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
+                user.getAvatarURL(),
+                profile.getCity(),
+                profile.getCountry(),
+                profile.getHourlyRate(),
+                profile.getCurrency(),
+                profile.getRatingAvg(),
+                profile.getReviewCount(),
+                profile.getIsVerified(),
+                specialtyNames
         );
     }
 }
