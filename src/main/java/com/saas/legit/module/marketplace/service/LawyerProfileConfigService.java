@@ -177,6 +177,8 @@ public class LawyerProfileConfigService {
                 profile.getCurrency(),
                 profile.getBarAssociation(),
                 profile.getBarRegistrationNumber(),
+                profile.getRatingAvg(),
+                profile.getReviewCount(),
                 specialtyDTOs,
                 scheduleDTOs
         );

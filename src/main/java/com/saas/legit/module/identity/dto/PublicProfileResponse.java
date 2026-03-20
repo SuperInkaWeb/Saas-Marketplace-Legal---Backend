@@ -13,6 +13,8 @@ public record PublicProfileResponse(
     String currency,
     String barAssociation,
     String barRegistrationNumber,
+    BigDecimal ratingAvg,
+    Integer reviewCount,
     List<SpecialtyDTO> specialties,
     List<ScheduleDTO> schedules
 ) {
