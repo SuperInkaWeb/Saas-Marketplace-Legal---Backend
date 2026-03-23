@@ -1,5 +1,6 @@
 package com.saas.legit.module.marketplace.repository;
 
+import com.saas.legit.module.identity.model.IdentityDocument;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +32,12 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
             SELECT DISTINCT lp FROM LawyerProfile lp
             LEFT JOIN lp.specialties s
             WHERE lp.isVerified = true
-            AND (:city IS NULL OR LOWER(lp.city) = LOWER(:city))
+            AND EXISTS (
+                SELECT 1 FROM IdentityDocument id 
+                WHERE id.user.idUser = lp.user.idUser 
+                AND id.isVerified = true
+            )
+            AND (CAST(:city AS string) IS NULL OR LOWER(lp.city) = LOWER(CAST(:city AS string)))
             AND (:specialtyId IS NULL OR s.id = :specialtyId)
             AND (:minRating IS NULL OR lp.ratingAvg >= :minRating)
             ORDER BY lp.ratingAvg DESC

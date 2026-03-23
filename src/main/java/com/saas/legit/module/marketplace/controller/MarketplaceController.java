@@ -55,4 +55,9 @@ public class MarketplaceController {
     public ResponseEntity<?> getPublicLawyerProfile(@PathVariable String slug) {
         return ResponseEntity.ok(lawyerProfileConfigService.getPublicProfile(slug));
     }
+
+    @GetMapping("/specialties")
+    public ResponseEntity<List<SpecialtyResponse>> getAllSpecialties() {
+        return ResponseEntity.ok(lawyerProfileConfigService.getAllSpecialties());
+    }
 }
