@@ -7,49 +7,53 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "reviews")
 @Getter
 @Setter
 @NoArgsConstructor
-@SQLRestriction("deleted_at IS NULL")
 public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id", nullable = false, unique = true)
-    private Appointment appointment;
+    @Column(name = "public_id", updatable = false, nullable = false, unique = true)
+    private UUID publicId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_profile_id", nullable = false)
-    private ClientProfile clientProfile;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lawyer_profile_id", nullable = false)
     private LawyerProfile lawyerProfile;
 
-    @Column(nullable = false)
-    private Short rating;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "client_profile_id", nullable = false)
+    private ClientProfile clientProfile;
 
-    @Column(columnDefinition = "TEXT")
-    private String comment;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "appointment_id", nullable = false, unique = true)
+    private Appointment appointment;
+
+    @Column(name = "score", nullable = false)
+    private Integer score;
+
+    @Column(name = "content", columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "is_anonymous")
+    private Boolean isAnonymous = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private OffsetDateTime deletedAt;
+    @PrePersist
+    protected void onCreate() {
+        if (publicId == null) {
+            publicId = UUID.randomUUID();
+        }
+    }
 }
