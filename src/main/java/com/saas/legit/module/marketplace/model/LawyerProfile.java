@@ -1,6 +1,6 @@
 package com.saas.legit.module.marketplace.model;
 
-import com.saas.legit.module.catalog.model.LawFirm;
+
 import com.saas.legit.module.identity.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,6 +11,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -32,9 +34,7 @@ public class LawyerProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "law_firm_id")
-    private LawFirm lawFirm;
+
 
     @Column(name = "slug", nullable = false, unique = true, length = 200)
     private String slugLawyerProfile;
@@ -93,7 +93,18 @@ public class LawyerProfile {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
-    public LawyerProfile(){
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "lawyer_specialties",
+            joinColumns = @JoinColumn(name = "lawyer_profile_id"),
+            inverseJoinColumns = @JoinColumn(name = "specialty_id")
+    )
+    private Set<Specialty> specialties = new HashSet<>();
+
+    @OneToMany(mappedBy = "lawyerProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<LawyerSchedule> schedules = new HashSet<>();
+
+    public LawyerProfile() {
     }
 
     public LawyerProfile(User user, String slugLawyerProfile, String city, String country) {

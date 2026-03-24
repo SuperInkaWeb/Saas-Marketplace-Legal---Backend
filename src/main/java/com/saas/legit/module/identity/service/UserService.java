@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -30,18 +32,90 @@ public class UserService {
     public UserMeResponse getMe(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
 
-        boolean hasProfile = resolveHasProfile(user);
+        String role = user.getRoleName();
+        boolean hasProfile = false;
+        String companyName = null;
+        String billingAddress = null;
+        String companyLogoUrl = null;
+        String bio = null;
+        String city = null;
+        String country = null;
+        java.math.BigDecimal hourlyRate = null;
+        String currency = null;
+        String barRegistrationNumber = null;
+        String barAssociation = null;
+
+        String slug = null;
+        List<UserMeResponse.SpecialtyInfo> specialties = Collections.emptyList();
+        List<UserMeResponse.ScheduleInfo> schedules = Collections.emptyList();
+
+        if (ROLE_CLIENT.equals(role)) {
+            var profileOpt = clientProfileRepository.findByUser(user);
+            if (profileOpt.isPresent()) {
+                hasProfile = true;
+                companyName = profileOpt.get().getCompanyName();
+                billingAddress = profileOpt.get().getBillingAddress();
+                companyLogoUrl = profileOpt.get().getCompanyURL();
+            }
+        } else if (ROLE_LAWYER.equals(role)) {
+            var profileOpt = lawyerProfileRepository.findByUserId(user.getIdUser());
+            if (profileOpt.isPresent()) {
+                LawyerProfile lp = profileOpt.get();
+                hasProfile = true;
+                bio = lp.getBioLawyer();
+                city = lp.getCity();
+                country = lp.getCountry();
+                hourlyRate = lp.getHourlyRate();
+                currency = lp.getCurrency();
+                barRegistrationNumber = lp.getBarRegistrationNumber();
+                barAssociation = lp.getBarAssociation();
+                slug = lp.getSlugLawyerProfile();
+
+
+
+                specialties = lp.getSpecialties().stream()
+                        .map(s -> new UserMeResponse.SpecialtyInfo(s.getId(), s.getName()))
+                        .toList();
+
+                schedules = lp.getSchedules().stream()
+                        .map(s -> new UserMeResponse.ScheduleInfo(
+                                s.getId(),
+                                s.getDayOfWeek(),
+                                s.getStartTime().toString(),
+                                s.getEndTime().toString()))
+                        .toList();
+            }
+        }
+
         boolean isVerified = resolveIsVerified(user);
 
         return new UserMeResponse(
                 user.getPublicId(),
                 user.getEmail(),
+                user.getFirstName(),
+                user.getLastNameFather(),
+                user.getLastNameMother(),
+                user.getPhoneNumber(),
+                slug,
                 user.getFullName(),
-                user.getRoleName(),
+                role,
                 user.getOnboardingStep().name(),
                 user.getAccountStatus().name(),
                 hasProfile,
-                isVerified
+                isVerified,
+                user.getAvatarURL(),
+                companyName,
+                billingAddress,
+                companyLogoUrl,
+                bio,
+                city,
+                country,
+                hourlyRate,
+                currency,
+                barRegistrationNumber,
+                barAssociation,
+                specialties,
+                schedules
         );
     }
 
@@ -62,10 +136,10 @@ public class UserService {
                     .orElse(false);
         }
         if (user.hasRole(ROLE_CLIENT)) {
-            // Clients are "verified" if they have a verified identity doc (optional)
             Optional<IdentityDocument> doc = identityDocumentRepository.findByUser(user);
             return doc.map(IdentityDocument::getIsVerified).orElse(false);
         }
         return false;
     }
 }
+

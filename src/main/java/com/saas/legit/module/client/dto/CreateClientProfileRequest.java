@@ -1,4 +1,4 @@
-package com.saas.legit.module.identity.dto;
+package com.saas.legit.module.client.dto;
 
 public record CreateClientProfileRequest(
         String companyName,

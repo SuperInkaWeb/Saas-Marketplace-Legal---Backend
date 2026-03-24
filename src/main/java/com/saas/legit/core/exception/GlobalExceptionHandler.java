@@ -1,6 +1,7 @@
 package com.saas.legit.core.exception;
 
 import com.saas.legit.module.identity.exception.*;
+import com.saas.legit.module.marketplace.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -97,6 +98,48 @@ public class GlobalExceptionHandler {
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, errors);
         problem.setTitle("Error de validación");
+        return problem;
+    }
+
+    @ExceptionHandler(LawyerProfileNotFoundException.class)
+    public ProblemDetail handleLawyerProfileNotFound(LawyerProfileNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Perfil No Encontrado");
+        return problem;
+    }
+
+    @ExceptionHandler(SpecialtyNotFoundException.class)
+    public ProblemDetail handleSpecialtyNotFound(SpecialtyNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Especialidad No Encontrada");
+        return problem;
+    }
+
+    @ExceptionHandler(ScheduleConflictException.class)
+    public ProblemDetail handleScheduleConflict(ScheduleConflictException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflicto de Horario");
+        return problem;
+    }
+
+    @ExceptionHandler(ScheduleNotFoundException.class)
+    public ProblemDetail handleScheduleNotFound(ScheduleNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Horario No Encontrado");
+        return problem;
+    }
+
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ProblemDetail handleUnauthorizedAccess(UnauthorizedAccessException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Acceso No Autorizado");
+        return problem;
+    }
+
+    @ExceptionHandler(DuplicateProposalException.class)
+    public ProblemDetail handleDuplicateProposal(DuplicateProposalException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Propuesta Duplicada");
         return problem;
     }
 

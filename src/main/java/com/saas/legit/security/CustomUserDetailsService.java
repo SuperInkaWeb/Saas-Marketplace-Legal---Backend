@@ -36,9 +36,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         Long tenantId = null;
         if (user.hasRole("LAWYER")) {
-            tenantId = lawyerProfileRepository.findByUserIdUser(user.getIdUser())
-                    .map(profile -> profile.getLawFirm() != null ? profile.getLawFirm().getIdLawFirm() : null)
-                    .orElse(null);
+            tenantId = null; // No longer tied to LawFirm
         }
 
         return new CustomUserDetails(
