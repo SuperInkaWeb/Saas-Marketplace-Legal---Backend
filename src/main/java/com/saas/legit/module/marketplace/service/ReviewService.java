@@ -53,14 +53,14 @@ public class ReviewService {
         review.setAppointment(appointment);
         review.setClientProfile(appointment.getClientProfile());
         review.setLawyerProfile(appointment.getLawyerProfile());
-        review.setScore(request.getScore());
-        review.setContent(request.getContent());
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
         review.setIsAnonymous(request.getIsAnonymous());
 
         Review saved = reviewRepository.save(review);
 
         // 3. Update Lawyer Profile Rating
-        updateLawyerRating(appointment.getLawyerProfile(), request.getScore());
+        updateLawyerRating(appointment.getLawyerProfile(), request.getRating());
 
         return mapToDTO(saved);
     }
@@ -70,12 +70,12 @@ public class ReviewService {
         LawyerProfile lawyer = lawyerProfileRepository.findByPublicId(lawyerPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found"));
 
-        return reviewRepository.findByLawyerProfileIdLawyerProfileOrderByCreatedAtDesc(lawyer.getIdLawyerProfile())
+        return reviewRepository.findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(lawyer.getIdLawyerProfile())
                 .stream().map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    private void updateLawyerRating(LawyerProfile lawyer, Integer newScore) {
+    private void updateLawyerRating(LawyerProfile lawyer, Short newScore) {
         BigDecimal currentAvg = lawyer.getRatingAvg() != null ? lawyer.getRatingAvg() : BigDecimal.ZERO;
         int currentCount = lawyer.getReviewCount() != null ? lawyer.getReviewCount() : 0;
 
@@ -95,8 +95,8 @@ public class ReviewService {
         dto.setPublicId(review.getPublicId());
         dto.setLawyerPublicId(review.getLawyerProfile().getPublicId());
         dto.setAppointmentPublicId(review.getAppointment().getPublicId());
-        dto.setScore(review.getScore());
-        dto.setContent(review.getContent());
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
         dto.setIsAnonymous(review.getIsAnonymous());
         dto.setCreatedAt(review.getCreatedAt());
 

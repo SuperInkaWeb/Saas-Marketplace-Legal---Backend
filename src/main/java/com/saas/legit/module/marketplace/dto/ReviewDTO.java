@@ -10,16 +10,16 @@ public class ReviewDTO {
     private UUID lawyerPublicId;
     private UUID appointmentPublicId;
     private String clientName;
-    private Integer score;
-    private String content;
+    private Short rating;
+    private String comment;
     private Boolean isAnonymous;
     private OffsetDateTime createdAt;
 
     @Data
     public static class Create {
         private UUID appointmentPublicId;
-        private Integer score;
-        private String content;
+        private Short rating;
+        private String comment;
         private Boolean isAnonymous = false;
     }
 }

@@ -37,11 +37,11 @@ public class Review {
     @JoinColumn(name = "appointment_id", nullable = false, unique = true)
     private Appointment appointment;
 
-    @Column(name = "score", nullable = false)
-    private Integer score;
+    @Column(name = "rating", nullable = false)
+    private Short rating;
 
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;
+    @Column(name = "comment", columnDefinition = "TEXT")
+    private String comment;
 
     @Column(name = "is_anonymous")
     private Boolean isAnonymous = false;

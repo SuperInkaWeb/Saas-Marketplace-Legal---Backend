@@ -11,6 +11,6 @@ import java.util.UUID;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByPublicId(UUID publicId);
-    List<Review> findByLawyerProfileIdLawyerProfileOrderByCreatedAtDesc(Long lawyerProfileId);
+    List<Review> findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(Long lawyerProfileId);
     boolean existsByAppointmentId(Long appointmentId);
 }
