@@ -43,12 +43,12 @@ public class MarketplaceController {
 
     @GetMapping("/lawyers")
     public ResponseEntity<Page<LawyerSearchResponse>> searchLawyers(
-            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) Long specialtyId,
             @RequestParam(required = false) BigDecimal minRating,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(lawyerProfileConfigService.searchLawyers(city, specialtyId, minRating, page, size));
+        return ResponseEntity.ok(lawyerProfileConfigService.searchLawyers(query, specialtyId, minRating, page, size));
     }
 
     @GetMapping("/lawyers/{slug}")

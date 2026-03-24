@@ -187,9 +187,9 @@ public class LawyerProfileConfigService {
     // ── SEARCH LAWYERS (marketplace) ──────────────────────────────────
 
     @Transactional(readOnly = true)
-    public Page<LawyerSearchResponse> searchLawyers(String city, Long specialtyId, BigDecimal minRating, int page, int size) {
+    public Page<LawyerSearchResponse> searchLawyers(String query, Long specialtyId, BigDecimal minRating, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<LawyerProfile> profiles = lawyerProfileRepository.searchVerifiedLawyers(city, specialtyId, minRating, pageable);
+        Page<LawyerProfile> profiles = lawyerProfileRepository.searchVerifiedLawyers(query, specialtyId, minRating, pageable);
         return profiles.map(this::toSearchResponse);
     }
 

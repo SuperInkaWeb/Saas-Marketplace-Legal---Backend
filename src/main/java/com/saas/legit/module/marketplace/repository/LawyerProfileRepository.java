@@ -44,13 +44,17 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
                 WHERE id.user.idUser = lp.user.idUser 
                 AND id.isVerified = true
             )
-            AND (CAST(:city AS string) IS NULL OR LOWER(lp.city) = LOWER(CAST(:city AS string)))
+            AND (CAST(:query AS string) IS NULL OR (
+                LOWER(lp.city) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
+                LOWER(lp.user.firstName) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
+                LOWER(lp.user.lastNameFather) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%'))
+            ))
             AND (:specialtyId IS NULL OR s.id = :specialtyId)
             AND (:minRating IS NULL OR lp.ratingAvg >= :minRating)
             ORDER BY lp.ratingAvg DESC
             """)
     Page<LawyerProfile> searchVerifiedLawyers(
-            @Param("city") String city,
+            @Param("query") String query,
             @Param("specialtyId") Long specialtyId,
             @Param("minRating") BigDecimal minRating,
             Pageable pageable
