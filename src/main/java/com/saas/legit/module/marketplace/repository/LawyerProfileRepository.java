@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +22,12 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
     Optional<LawyerProfile> findByUserIdUser(Long userId);
 
     boolean existsBySlugLawyerProfile(String slug);
+
+    // ── Admin queries ─────────────────────────────────────────────────
+
+    List<LawyerProfile> findByVerificationStatus(LawyerProfile.VerificationStatus status);
+
+    long countByVerificationStatus(LawyerProfile.VerificationStatus status);
 
     @Query("SELECT lp FROM LawyerProfile lp WHERE lp.user.idUser = :userId")
     Optional<LawyerProfile> findByUserId(@Param("userId") Long userId);

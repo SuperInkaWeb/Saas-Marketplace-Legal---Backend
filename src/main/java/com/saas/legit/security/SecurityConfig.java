@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/lawyer-profile/public/**").permitAll()
                         .requestMatchers("/api/v1/marketplace/lawyers/**").permitAll()
                         .requestMatchers("/api/v1/marketplace/lawyers").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/v1/me").authenticated()
                         .requestMatchers("/api/v1/onboarding/**").authenticated()
                         .requestMatchers("/api/v1/kyc/**").authenticated()
