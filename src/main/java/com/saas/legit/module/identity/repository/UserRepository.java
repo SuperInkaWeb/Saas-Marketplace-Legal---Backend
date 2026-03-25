@@ -30,14 +30,28 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     long countByCreatedAtAfter(OffsetDateTime date);
 
-    @Query("""
-            SELECT u FROM User u LEFT JOIN u.role r
-            WHERE (:search IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
-                   OR LOWER(u.lastNameFather) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
-                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
-            AND (:role IS NULL OR r.nameRol = :role)
-            AND (:status IS NULL OR CAST(u.accountStatus AS string) = :status)
-            """)
+    @Query(
+            value = """
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.role r
+        WHERE (:search IS NULL
+               OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+               OR LOWER(u.lastNameFather) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+               OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
+        AND (:role IS NULL OR r.nameRol = :role)
+        AND (:status IS NULL OR CAST(u.accountStatus AS string) = :status)
+        """,
+            countQuery = """
+        SELECT COUNT(u) FROM User u
+        LEFT JOIN u.role r
+        WHERE (:search IS NULL
+               OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+               OR LOWER(u.lastNameFather) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+               OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
+        AND (:role IS NULL OR r.nameRol = :role)
+        AND (:status IS NULL OR CAST(u.accountStatus AS string) = :status)
+        """
+    )
     Page<User> searchUsers(
             @Param("search") String search,
             @Param("role") String role,

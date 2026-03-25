@@ -20,9 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,7 +69,24 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<AdminUserListResponse> getUsers(String search, String role, String status, Pageable pageable) {
         Page<User> users = userRepository.searchUsers(search, role, status, pageable);
-        return users.map(this::mapToUserListResponse);
+
+        // Extraer IDs de abogados en un solo paso
+        List<Long> lawyerUserIds = users.stream()
+                .filter(u -> u.hasRole("LAWYER"))
+                .map(User::getIdUser)
+                .toList();
+
+        // Una sola query para todos los perfiles de abogado
+        Map<Long, Boolean> isVerifiedByUserId = lawyerUserIds.isEmpty()
+                ? Collections.emptyMap()
+                : lawyerProfileRepository.findByUserIdIn(lawyerUserIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        lp -> lp.getUser().getIdUser(),
+                        LawyerProfile::getIsVerified
+                ));
+
+        return users.map(user -> mapToUserListResponse(user, isVerifiedByUserId));
     }
 
     @Transactional(readOnly = true)
@@ -141,13 +156,8 @@ public class AdminService {
 
     // ── PRIVATE MAPPERS ───────────────────────────────────────────────
 
-    private AdminUserListResponse mapToUserListResponse(User user) {
-        boolean isVerified = false;
-        if (user.hasRole("LAWYER")) {
-            isVerified = lawyerProfileRepository.findByUserId(user.getIdUser())
-                    .map(LawyerProfile::getIsVerified)
-                    .orElse(false);
-        }
+    private AdminUserListResponse mapToUserListResponse(User user, Map<Long, Boolean> isVerifiedByUserId) {
+        boolean isVerified = isVerifiedByUserId.getOrDefault(user.getIdUser(), false);
 
         return new AdminUserListResponse(
                 user.getPublicId(),

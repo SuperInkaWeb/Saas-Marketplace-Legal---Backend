@@ -25,6 +25,9 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
 
     // ── Admin queries ─────────────────────────────────────────────────
 
+    @Query("SELECT lp FROM LawyerProfile lp WHERE lp.user.idUser IN :userIds")
+    List<LawyerProfile> findByUserIdIn(@Param("userIds") List<Long> userIds);
+
     List<LawyerProfile> findByVerificationStatus(LawyerProfile.VerificationStatus status);
 
     long countByVerificationStatus(LawyerProfile.VerificationStatus status);
