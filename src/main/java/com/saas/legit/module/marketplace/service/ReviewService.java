@@ -59,8 +59,10 @@ public class ReviewService {
 
         Review saved = reviewRepository.save(review);
 
-        // 3. Update Lawyer Profile Rating
-        updateLawyerRating(appointment.getLawyerProfile(), request.getRating());
+        lawyerProfileRepository.updateRatingAtomic(
+                appointment.getLawyerProfile().getIdLawyerProfile(),
+                request.getRating()
+        );
 
         return mapToDTO(saved);
     }
@@ -73,21 +75,6 @@ public class ReviewService {
         return reviewRepository.findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(lawyer.getIdLawyerProfile())
                 .stream().map(this::mapToDTO)
                 .collect(Collectors.toList());
-    }
-
-    private void updateLawyerRating(LawyerProfile lawyer, Short newScore) {
-        BigDecimal currentAvg = lawyer.getRatingAvg() != null ? lawyer.getRatingAvg() : BigDecimal.ZERO;
-        int currentCount = lawyer.getReviewCount() != null ? lawyer.getReviewCount() : 0;
-
-        BigDecimal totalSum = currentAvg.multiply(new BigDecimal(currentCount));
-        BigDecimal newTotalSum = totalSum.add(new BigDecimal(newScore));
-        int newCount = currentCount + 1;
-
-        BigDecimal newAvg = newTotalSum.divide(new BigDecimal(newCount), 2, RoundingMode.HALF_UP);
-
-        lawyer.setRatingAvg(newAvg);
-        lawyer.setReviewCount(newCount);
-        lawyerProfileRepository.save(lawyer);
     }
 
     private ReviewDTO mapToDTO(Review review) {
