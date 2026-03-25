@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+
 @Entity
 @Table(name = "identity_documents")
 @Getter
@@ -28,6 +30,7 @@ public class IdentityDocument {
     @Column(name = "document_number", nullable = false, length = 100)
     private String documentNumber;
 
+    @JdbcTypeCode(java.sql.Types.CHAR)
     @Column(name = "country_code", nullable = false, length = 2)
     private String countryCode;
 

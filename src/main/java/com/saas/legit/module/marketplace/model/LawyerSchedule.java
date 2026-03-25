@@ -9,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+
 @Entity
 @Table(name = "lawyer_schedules")
 @Getter
@@ -23,6 +25,7 @@ public class LawyerSchedule {
     @JoinColumn(name = "lawyer_profile_id", nullable = false)
     private LawyerProfile lawyerProfile;
 
+    @JdbcTypeCode(java.sql.Types.SMALLINT)
     @Column(name = "day_of_week", nullable = false)
     private Integer dayOfWeek;
 
