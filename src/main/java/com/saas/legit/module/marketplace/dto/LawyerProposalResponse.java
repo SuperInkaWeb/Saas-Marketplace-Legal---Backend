@@ -13,6 +13,7 @@ public class LawyerProposalResponse {
     private Long id;
     private String lawyerName;
     private String lawyerPublicId;
+    private String lawyerSlug;
     private String proposalText;
     private BigDecimal proposedFee;
     private ProposalStatus status;

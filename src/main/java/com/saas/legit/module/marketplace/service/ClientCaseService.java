@@ -155,6 +155,7 @@ public class ClientCaseService {
                         .lawyerName(p.getLawyerProfile().getUser().getFirstName()
                                 + " " + p.getLawyerProfile().getUser().getLastNameFather())
                         .lawyerPublicId(p.getLawyerProfile().getPublicId().toString())
+                        .lawyerSlug(p.getLawyerProfile().getSlugLawyerProfile())
                         .proposalText(p.getProposalText())
                         .proposedFee(p.getProposedFee())
                         .status(p.getStatus())
