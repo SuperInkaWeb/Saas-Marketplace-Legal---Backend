@@ -4,6 +4,7 @@ import com.saas.legit.core.util.SecurityUtils;
 import com.saas.legit.module.marketplace.dto.ReviewDTO;
 import com.saas.legit.module.marketplace.service.ReviewService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,7 +21,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ResponseEntity<ReviewDTO> createReview(@RequestBody ReviewDTO.Create request) {
+    public ResponseEntity<ReviewDTO> createReview(@Valid @RequestBody ReviewDTO.Create request) {
         Long userId = SecurityUtils.getCurrentUser().userId();
         return ResponseEntity.ok(reviewService.createReview(userId, request));
     }

@@ -1,5 +1,6 @@
 package com.saas.legit.module.marketplace.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,7 +25,9 @@ public record UpdateLawyerProfileRequest(
 
                 BigDecimal longitude,
 
-                @NotNull(message = "La tarifa por hora es obligatoria") BigDecimal hourlyRate,
+                @NotNull(message = "La tarifa por hora es obligatoria")
+                @DecimalMin(value = "0.0", inclusive = false, message = "La tarifa debe ser mayor a cero")
+                BigDecimal hourlyRate,
 
                 @NotBlank(message = "La moneda es obligatoria") @Size(max = 3) String currency,
 
