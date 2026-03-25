@@ -62,5 +62,3 @@ logs/
 .env.*
 *.local
 application-dev.yaml
-application.yaml
-application-prod.yaml
