@@ -17,6 +17,7 @@ public class CaseWithProposalsResponse {
     private String description;
     private BigDecimal budget;
     private String specialtyName;
+    private String clientName;
     private CaseRequestStatus status;
     private OffsetDateTime createdAt;
     private List<LawyerProposalResponse> proposals;

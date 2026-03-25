@@ -2,6 +2,7 @@ package com.saas.legit.module.marketplace.service;
 
 import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.marketplace.dto.CaseRequestResponse;
+import com.saas.legit.module.marketplace.dto.CaseWithProposalsResponse;
 import com.saas.legit.module.marketplace.dto.CreateProposalRequest;
 import com.saas.legit.module.marketplace.dto.LawyerProposalResponse;
 import com.saas.legit.module.marketplace.model.CaseRequest;
@@ -31,6 +32,34 @@ public class MarketplaceService {
     public List<CaseRequestResponse> getOpenRequests() {
         return caseRequestRepository.findByStatusOrderByCreatedAtDesc(CaseRequestStatus.OPEN)
                 .stream().map(this::mapToCaseResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public CaseWithProposalsResponse getCaseWithProposals(UUID publicId) {
+        CaseRequest caseRequest = caseRequestRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
+
+        List<LawyerProposal> proposals = lawyerProposalRepository
+                .findByCaseRequest_IdOrderByCreatedAtDesc(caseRequest.getId());
+
+        List<LawyerProposalResponse> proposalResponses = proposals.stream()
+                .map(this::mapToProposalResponse)
+                .collect(Collectors.toList());
+
+        return CaseWithProposalsResponse.builder()
+                .publicId(caseRequest.getPublicId())
+                .title(caseRequest.getTitle())
+                .description(caseRequest.getDescription())
+                .budget(caseRequest.getBudget())
+                .specialtyName(caseRequest.getSpecialty() != null
+                        ? caseRequest.getSpecialty().getName() : null)
+                .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
+                        caseRequest.getClientProfile().getCompanyName() : 
+                        caseRequest.getClientProfile().getUser().getFirstName())
+                .status(caseRequest.getStatus())
+                .createdAt(caseRequest.getCreatedAt())
+                .proposals(proposalResponses)
+                .build();
     }
 
     @Transactional

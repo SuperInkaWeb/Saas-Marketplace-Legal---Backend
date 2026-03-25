@@ -30,6 +30,12 @@ public class MarketplaceController {
         return ResponseEntity.ok(marketplaceService.getOpenRequests());
     }
 
+    @GetMapping("/cases/{publicId}")
+    public ResponseEntity<CaseWithProposalsResponse> getCaseDetail(
+            @PathVariable UUID publicId) {
+        return ResponseEntity.ok(marketplaceService.getCaseWithProposals(publicId));
+    }
+
     @PostMapping("/cases/{casePublicId}/proposals")
     public ResponseEntity<LawyerProposalResponse> submitProposal(
             @PathVariable UUID casePublicId,
