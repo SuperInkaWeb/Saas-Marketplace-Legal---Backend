@@ -56,7 +56,8 @@ public class MarketplaceService {
                         ? caseRequest.getSpecialty().getName() : null)
                 .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
                         caseRequest.getClientProfile().getCompanyName() : 
-                        caseRequest.getClientProfile().getUser().getFirstName())
+                        caseRequest.getClientProfile().getUser().getFullName())
+                .clientAvatarUrl(caseRequest.getClientProfile().getUser().getAvatarURL())
                 .status(caseRequest.getStatus())
                 .createdAt(caseRequest.getCreatedAt())
                 .proposals(proposalResponses)
@@ -95,7 +96,8 @@ public class MarketplaceService {
                 .publicId(caseRequest.getPublicId())
                 .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
                             caseRequest.getClientProfile().getCompanyName() : 
-                            caseRequest.getClientProfile().getUser().getFirstName())
+                            caseRequest.getClientProfile().getUser().getFullName())
+                .clientAvatarUrl(caseRequest.getClientProfile().getUser().getAvatarURL())
                 .title(caseRequest.getTitle())
                 .description(caseRequest.getDescription())
                 .budget(caseRequest.getBudget())
@@ -114,6 +116,7 @@ public class MarketplaceService {
                 .proposalText(proposal.getProposalText())
                 .proposedFee(proposal.getProposedFee())
                 .status(proposal.getStatus())
+                .lawyerAvatarUrl(proposal.getLawyerProfile().getUser().getAvatarURL())
                 .createdAt(proposal.getCreatedAt())
                 .build();
     }

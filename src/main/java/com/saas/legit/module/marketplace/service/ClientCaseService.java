@@ -1,8 +1,8 @@
-// src/.../marketplace/service/ClientCaseService.java
 package com.saas.legit.module.marketplace.service;
 
 import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.identity.model.ClientProfile;
+import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
 import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.dto.CaseWithProposalsResponse;
@@ -41,7 +41,7 @@ public class ClientCaseService {
     public CaseWithProposalsResponse createCase(Long userId, CreateCaseRequest request) {
         ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
                 .orElseGet(() -> {
-                    com.saas.legit.module.identity.model.User user = userRepository.findById(userId)
+                    User user = userRepository.findById(userId)
                             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
                     ClientProfile newProfile = new ClientProfile();
                     newProfile.setUser(user);
@@ -72,7 +72,7 @@ public class ClientCaseService {
         ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
                 .orElseGet(() -> {
                     // Si el usuario es un CLIENTE pero le falta el perfil (ej. datos migrados), lo creamos bajo demanda
-                    com.saas.legit.module.identity.model.User user = userRepository.findById(userId)
+                    User user = userRepository.findById(userId)
                             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
                     
                     ClientProfile newProfile = new ClientProfile();
@@ -175,6 +175,7 @@ public class ClientCaseService {
                         .proposalText(p.getProposalText())
                         .proposedFee(p.getProposedFee())
                         .status(p.getStatus())
+                        .lawyerAvatarUrl(p.getLawyerProfile().getUser().getAvatarURL())
                         .createdAt(p.getCreatedAt())
                         .build())
                 .toList();
@@ -186,6 +187,10 @@ public class ClientCaseService {
                 .budget(caseRequest.getBudget())
                 .specialtyName(caseRequest.getSpecialty() != null
                         ? caseRequest.getSpecialty().getName() : null)
+                .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
+                        caseRequest.getClientProfile().getCompanyName() : 
+                        caseRequest.getClientProfile().getUser().getFullName())
+                .clientAvatarUrl(caseRequest.getClientProfile().getUser().getAvatarURL())
                 .status(caseRequest.getStatus())
                 .createdAt(caseRequest.getCreatedAt())
                 .proposals(proposalResponses)

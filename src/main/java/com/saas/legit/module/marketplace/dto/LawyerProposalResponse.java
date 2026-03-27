@@ -17,5 +17,6 @@ public class LawyerProposalResponse {
     private String proposalText;
     private BigDecimal proposedFee;
     private ProposalStatus status;
+    private String lawyerAvatarUrl;
     private OffsetDateTime createdAt;
 }

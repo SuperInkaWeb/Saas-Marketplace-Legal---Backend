@@ -13,6 +13,7 @@ import java.util.UUID;
 public class CaseRequestResponse {
     private UUID publicId;
     private String clientName;
+    private String clientAvatarUrl;
     private String title;
     private String description;
     private BigDecimal budget;
