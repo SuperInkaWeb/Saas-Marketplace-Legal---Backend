@@ -198,7 +198,13 @@ public class LawyerProfileConfigService {
     @Transactional(readOnly = true)
     public List<SpecialtyResponse> getAllSpecialties() {
         return specialtyRepository.findAll().stream()
-                .map(s -> new SpecialtyResponse(s.getId(), s.getName(), s.getDescription()))
+                .map(s -> new SpecialtyResponse(
+                        s.getId(),
+                        s.getName(),
+                        s.getDescription(),
+                        s.getIsActive(),
+                        specialtyRepository.countLawyersBySpecialtyId(s.getId())
+                ))
                 .toList();
     }
 

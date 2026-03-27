@@ -131,8 +131,15 @@ public class UserService {
 
     private boolean resolveIsVerified(User user) {
         if (user.hasRole(ROLE_LAWYER)) {
-            return lawyerProfileRepository.findByUserId(user.getIdUser())
-                    .map(lp -> lp.getVerificationStatus() == LawyerProfile.VerificationStatus.VERIFIED)
+            boolean profileVerified = lawyerProfileRepository.findByUserId(user.getIdUser())
+                    .map(lp -> lp.getVerificationStatus() == LawyerProfile.VerificationStatus.VERIFIED || Boolean.TRUE.equals(lp.getIsVerified()))
+                    .orElse(false);
+
+            if (profileVerified) return true;
+
+            // Fallback: check identity document
+            return identityDocumentRepository.findByUser(user)
+                    .map(IdentityDocument::getIsVerified)
                     .orElse(false);
         }
         if (user.hasRole(ROLE_CLIENT)) {

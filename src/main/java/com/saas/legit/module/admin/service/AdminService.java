@@ -9,8 +9,11 @@ import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.IdentityDocumentRepository;
 import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
+import com.saas.legit.module.marketplace.model.Specialty;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
 import com.saas.legit.module.marketplace.repository.ReviewRepository;
+import com.saas.legit.module.marketplace.repository.SpecialtyRepository;
+import com.saas.legit.module.marketplace.dto.SpecialtyResponse;
 import com.saas.legit.module.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,9 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +36,7 @@ public class AdminService {
     private final ReviewRepository reviewRepository;
     private final PaymentRepository paymentRepository;
     private final IdentityDocumentRepository identityDocumentRepository;
+    private final SpecialtyRepository specialtyRepository;
 
     // ── DASHBOARD METRICS ─────────────────────────────────────────────
 
@@ -71,7 +73,24 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<AdminUserListResponse> getUsers(String search, String role, String status, Pageable pageable) {
         Page<User> users = userRepository.searchUsers(search, role, status, pageable);
-        return users.map(this::mapToUserListResponse);
+
+        // Extraer IDs de abogados en un solo paso
+        List<Long> lawyerUserIds = users.stream()
+                .filter(u -> u.hasRole("LAWYER"))
+                .map(User::getIdUser)
+                .toList();
+
+        // Una sola query para todos los perfiles de abogado
+        Map<Long, Boolean> isVerifiedByUserId = lawyerUserIds.isEmpty()
+                ? Collections.emptyMap()
+                : lawyerProfileRepository.findByUserIdIn(lawyerUserIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        lp -> lp.getUser().getIdUser(),
+                        LawyerProfile::getIsVerified
+                ));
+
+        return users.map(user -> mapToUserListResponse(user, isVerifiedByUserId));
     }
 
     @Transactional(readOnly = true)
@@ -139,15 +158,73 @@ public class AdminService {
         lawyerProfileRepository.save(profile);
     }
 
+    // ── SPECIALTIES MANAGEMENT ───────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<SpecialtyResponse> getAllSpecialties() {
+        return specialtyRepository.findAll().stream()
+                .map(this::mapToSpecialtyResponse)
+                .toList();
+    }
+
+    @Transactional
+    public SpecialtyResponse createSpecialty(CreateSpecialtyRequest request) {
+        Specialty specialty = new Specialty();
+        specialty.setName(request.name());
+        specialty.setDescription(request.description());
+        specialty.setIsActive(request.isActive() != null ? request.isActive() : true);
+
+        specialty = specialtyRepository.save(specialty);
+        return mapToSpecialtyResponse(specialty);
+    }
+
+    @Transactional
+    public SpecialtyResponse updateSpecialty(Long id, CreateSpecialtyRequest request) {
+        Specialty specialty = specialtyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Especialidad no encontrada"));
+
+        specialty.setName(request.name());
+        specialty.setDescription(request.description());
+        if (request.isActive() != null) {
+            specialty.setIsActive(request.isActive());
+        }
+
+        specialty = specialtyRepository.save(specialty);
+        return mapToSpecialtyResponse(specialty);
+    }
+
+    @Transactional
+    public void deleteSpecialty(Long id) {
+        if (!specialtyRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Especialidad no encontrada");
+        }
+        specialtyRepository.deleteById(id);
+    }
+
+    @Transactional
+    public SpecialtyResponse toggleSpecialtyStatus(Long id) {
+        Specialty specialty = specialtyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Especialidad no encontrada"));
+
+        specialty.setIsActive(!specialty.getIsActive());
+        specialty = specialtyRepository.save(specialty);
+        return mapToSpecialtyResponse(specialty);
+    }
+
     // ── PRIVATE MAPPERS ───────────────────────────────────────────────
 
-    private AdminUserListResponse mapToUserListResponse(User user) {
-        boolean isVerified = false;
-        if (user.hasRole("LAWYER")) {
-            isVerified = lawyerProfileRepository.findByUserId(user.getIdUser())
-                    .map(LawyerProfile::getIsVerified)
-                    .orElse(false);
-        }
+    private SpecialtyResponse mapToSpecialtyResponse(Specialty specialty) {
+        return new SpecialtyResponse(
+                specialty.getId(),
+                specialty.getName(),
+                specialty.getDescription(),
+                specialty.getIsActive(),
+                specialtyRepository.countLawyersBySpecialtyId(specialty.getId())
+        );
+    }
+
+    private AdminUserListResponse mapToUserListResponse(User user, Map<Long, Boolean> isVerifiedByUserId) {
+        boolean isVerified = isVerifiedByUserId.getOrDefault(user.getIdUser(), false);
 
         return new AdminUserListResponse(
                 user.getPublicId(),

@@ -1,5 +1,6 @@
 package com.saas.legit.core.exception;
 
+import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.identity.exception.*;
 import com.saas.legit.module.marketplace.exception.*;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.stream.Collectors;
 
@@ -140,6 +142,23 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleDuplicateProposal(DuplicateProposalException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Propuesta Duplicada");
+        return problem;
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleResourceNotFound(ResourceNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Recurso No Encontrado");
+        return problem;
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ProblemDetail handleNoHandlerFound(NoHandlerFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                "La ruta solicitada no existe: " + ex.getRequestURL()
+        );
+        problem.setTitle("Ruta No Encontrada");
         return problem;
     }
 

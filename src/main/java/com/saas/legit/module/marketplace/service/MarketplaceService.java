@@ -2,8 +2,10 @@ package com.saas.legit.module.marketplace.service;
 
 import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.marketplace.dto.CaseRequestResponse;
+import com.saas.legit.module.marketplace.dto.CaseWithProposalsResponse;
 import com.saas.legit.module.marketplace.dto.CreateProposalRequest;
 import com.saas.legit.module.marketplace.dto.LawyerProposalResponse;
+import com.saas.legit.module.marketplace.exception.DuplicateProposalException;
 import com.saas.legit.module.marketplace.model.CaseRequest;
 import com.saas.legit.module.marketplace.model.CaseRequestStatus;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
@@ -33,6 +35,35 @@ public class MarketplaceService {
                 .stream().map(this::mapToCaseResponse).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public CaseWithProposalsResponse getCaseWithProposals(UUID publicId) {
+        CaseRequest caseRequest = caseRequestRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Caso no encontrado"));
+
+        List<LawyerProposal> proposals = lawyerProposalRepository
+                .findByCaseRequest_IdOrderByCreatedAtDesc(caseRequest.getId());
+
+        List<LawyerProposalResponse> proposalResponses = proposals.stream()
+                .map(this::mapToProposalResponse)
+                .collect(Collectors.toList());
+
+        return CaseWithProposalsResponse.builder()
+                .publicId(caseRequest.getPublicId())
+                .title(caseRequest.getTitle())
+                .description(caseRequest.getDescription())
+                .budget(caseRequest.getBudget())
+                .specialtyName(caseRequest.getSpecialty() != null
+                        ? caseRequest.getSpecialty().getName() : null)
+                .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
+                        caseRequest.getClientProfile().getCompanyName() : 
+                        caseRequest.getClientProfile().getUser().getFullName())
+                .clientAvatarUrl(caseRequest.getClientProfile().getUser().getAvatarURL())
+                .status(caseRequest.getStatus())
+                .createdAt(caseRequest.getCreatedAt())
+                .proposals(proposalResponses)
+                .build();
+    }
+
     @Transactional
     public LawyerProposalResponse submitProposal(Long userId, UUID casePublicId, CreateProposalRequest request) {
         LawyerProfile lawyer = lawyerProfileRepository.findByUserId(userId)
@@ -44,6 +75,15 @@ public class MarketplaceService {
         if (caseRequest.getStatus() != CaseRequestStatus.OPEN) {
             throw new IllegalArgumentException("Case request is no longer open");
         }
+
+        // Evitar propuestas de abogados no verificados
+        if (!Boolean.TRUE.equals(lawyer.getIsVerified())) {
+            throw new IllegalStateException("Solo los abogados verificados pueden enviar propuestas");
+        }
+
+        // Evitar propuestas duplicadas
+        lawyerProposalRepository.findByCaseRequest_IdAndLawyerProfile_IdLawyerProfile(caseRequest.getId(), lawyer.getIdLawyerProfile())
+                .ifPresent(p -> { throw new IllegalStateException("Ya has enviado una propuesta para este caso"); });
 
         LawyerProposal proposal = new LawyerProposal();
         proposal.setCaseRequest(caseRequest);
@@ -61,7 +101,8 @@ public class MarketplaceService {
                 .publicId(caseRequest.getPublicId())
                 .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
                             caseRequest.getClientProfile().getCompanyName() : 
-                            caseRequest.getClientProfile().getUser().getFirstName())
+                            caseRequest.getClientProfile().getUser().getFullName())
+                .clientAvatarUrl(caseRequest.getClientProfile().getUser().getAvatarURL())
                 .title(caseRequest.getTitle())
                 .description(caseRequest.getDescription())
                 .budget(caseRequest.getBudget())
@@ -76,9 +117,11 @@ public class MarketplaceService {
                 .id(proposal.getId())
                 .lawyerName(proposal.getLawyerProfile().getUser().getFirstName() + " " + proposal.getLawyerProfile().getUser().getLastNameFather())
                 .lawyerPublicId(proposal.getLawyerProfile().getPublicId().toString())
+                .lawyerSlug(proposal.getLawyerProfile().getSlugLawyerProfile())
                 .proposalText(proposal.getProposalText())
                 .proposedFee(proposal.getProposedFee())
                 .status(proposal.getStatus())
+                .lawyerAvatarUrl(proposal.getLawyerProfile().getUser().getAvatarURL())
                 .createdAt(proposal.getCreatedAt())
                 .build();
     }

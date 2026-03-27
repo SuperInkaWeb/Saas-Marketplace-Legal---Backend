@@ -48,7 +48,7 @@ public class EmailService {
 
     private void send(String toEmail, String subject, String html) {
         CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("Legit <" + senderEmail + ">")
+                .from("AbogHub <" + senderEmail + ">")
                 .to(toEmail)
                 .subject(subject)
                 .html(html)

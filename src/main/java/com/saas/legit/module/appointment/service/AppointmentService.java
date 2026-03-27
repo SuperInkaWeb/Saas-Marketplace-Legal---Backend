@@ -3,11 +3,13 @@ package com.saas.legit.module.appointment.service;
 import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.appointment.dto.AppointmentRequest;
 import com.saas.legit.module.appointment.dto.AppointmentResponse;
+import com.saas.legit.module.appointment.exception.InvalidAppointmentTransitionException;
 import com.saas.legit.module.appointment.model.Appointment;
 import com.saas.legit.module.appointment.model.AppointmentStatus;
 import com.saas.legit.module.appointment.repository.AppointmentRepository;
 import com.saas.legit.module.identity.model.ClientProfile;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
+import com.saas.legit.module.marketplace.exception.UnauthorizedAccessException;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,22 +60,20 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getLawyerAppointments(Long userId) {
-        LawyerProfile lawyerProfile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found"));
-
-        return appointmentRepository.findByLawyerProfile_IdLawyerProfileOrderByScheduledStartDesc(lawyerProfile.getIdLawyerProfile())
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return lawyerProfileRepository.findByUserId(userId)
+                .map(lawyerProfile -> appointmentRepository.findByLawyerProfile_IdLawyerProfileOrderByScheduledStartDesc(lawyerProfile.getIdLawyerProfile())
+                        .stream().map(this::mapToResponse)
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getClientAppointments(Long userId) {
-        ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
-
-        return appointmentRepository.findByClientProfile_IdClientProfileOrderByScheduledStartDesc(clientProfile.getIdClientProfile())
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return clientProfileRepository.findByUser_IdUser(userId)
+                .map(clientProfile -> appointmentRepository.findByClientProfile_IdClientProfileOrderByScheduledStartDesc(clientProfile.getIdClientProfile())
+                        .stream().map(this::mapToResponse)
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
     }
 
     @Transactional
@@ -81,12 +81,21 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findByPublicId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
 
-        // Basic authorization check: must belong to client or lawyer
         boolean isLawyer = appointment.getLawyerProfile().getUser().getIdUser().equals(userId);
         boolean isClient = appointment.getClientProfile().getUser().getIdUser().equals(userId);
 
         if (!isLawyer && !isClient) {
-            throw new IllegalArgumentException("Not authorized to update this appointment");
+            throw new UnauthorizedAccessException("cita");
+        }
+
+        AppointmentStatus current = appointment.getStatus();
+
+        if (isLawyer && !current.isLawyerAllowed(newStatus)) {
+            throw new InvalidAppointmentTransitionException(current.name(), newStatus.name());
+        }
+
+        if (isClient && !current.isClientAllowed(newStatus)) {
+            throw new InvalidAppointmentTransitionException(current.name(), newStatus.name());
         }
 
         appointment.setStatus(newStatus);
@@ -95,10 +104,8 @@ public class AppointmentService {
             appointment.setMeetingLink("https://meet.jit.si/legit-" + appointment.getPublicId());
         }
 
-        Appointment saved = appointmentRepository.save(appointment);
-        return mapToResponse(saved);
+        return mapToResponse(appointmentRepository.save(appointment));
     }
-
     private AppointmentResponse mapToResponse(Appointment appointment) {
         return AppointmentResponse.builder()
                 .publicId(appointment.getPublicId())
