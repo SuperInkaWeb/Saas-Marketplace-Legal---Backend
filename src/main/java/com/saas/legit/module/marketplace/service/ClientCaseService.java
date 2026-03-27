@@ -4,6 +4,7 @@ package com.saas.legit.module.marketplace.service;
 import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.identity.model.ClientProfile;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
+import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.dto.CaseWithProposalsResponse;
 import com.saas.legit.module.marketplace.dto.CreateCaseRequest;
 import com.saas.legit.module.marketplace.dto.LawyerProposalResponse;
@@ -32,13 +33,20 @@ public class ClientCaseService {
     private final LawyerProposalRepository lawyerProposalRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final SpecialtyRepository specialtyRepository;
+    private final UserRepository userRepository;
 
     // ── CREAR CASO ─────────────────────────────────────────────────────
 
     @Transactional
     public CaseWithProposalsResponse createCase(Long userId, CreateCaseRequest request) {
         ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Perfil de cliente no encontrado"));
+                .orElseGet(() -> {
+                    com.saas.legit.module.identity.model.User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                    ClientProfile newProfile = new ClientProfile();
+                    newProfile.setUser(user);
+                    return clientProfileRepository.save(newProfile);
+                });
 
         CaseRequest caseRequest = new CaseRequest();
         caseRequest.setClientProfile(clientProfile);
@@ -59,10 +67,18 @@ public class ClientCaseService {
 
     // ── VER MIS CASOS CON PROPUESTAS ───────────────────────────────────
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<CaseWithProposalsResponse> getMyCases(Long userId) {
         ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Perfil de cliente no encontrado"));
+                .orElseGet(() -> {
+                    // Si el usuario es un CLIENTE pero le falta el perfil (ej. datos migrados), lo creamos bajo demanda
+                    com.saas.legit.module.identity.model.User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                    
+                    ClientProfile newProfile = new ClientProfile();
+                    newProfile.setUser(user);
+                    return clientProfileRepository.save(newProfile);
+                });
 
         List<CaseRequest> cases = caseRequestRepository
                 .findByClientProfile_IdClientProfileOrderByCreatedAtDesc(

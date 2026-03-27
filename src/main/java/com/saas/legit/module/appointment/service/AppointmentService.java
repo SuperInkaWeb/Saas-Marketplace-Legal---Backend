@@ -60,22 +60,20 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getLawyerAppointments(Long userId) {
-        LawyerProfile lawyerProfile = lawyerProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found"));
-
-        return appointmentRepository.findByLawyerProfile_IdLawyerProfileOrderByScheduledStartDesc(lawyerProfile.getIdLawyerProfile())
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return lawyerProfileRepository.findByUserId(userId)
+                .map(lawyerProfile -> appointmentRepository.findByLawyerProfile_IdLawyerProfileOrderByScheduledStartDesc(lawyerProfile.getIdLawyerProfile())
+                        .stream().map(this::mapToResponse)
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getClientAppointments(Long userId) {
-        ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
-
-        return appointmentRepository.findByClientProfile_IdClientProfileOrderByScheduledStartDesc(clientProfile.getIdClientProfile())
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return clientProfileRepository.findByUser_IdUser(userId)
+                .map(clientProfile -> appointmentRepository.findByClientProfile_IdClientProfileOrderByScheduledStartDesc(clientProfile.getIdClientProfile())
+                        .stream().map(this::mapToResponse)
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
     }
 
     @Transactional
