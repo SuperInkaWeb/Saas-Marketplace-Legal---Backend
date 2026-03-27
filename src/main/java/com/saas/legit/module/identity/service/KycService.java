@@ -78,7 +78,7 @@ public class KycService {
         Optional<IdentityDocument> doc = identityDocumentRepository.findByUser(user);
 
         if (doc.isEmpty()) {
-            return new KycStatusResponse(false, null, null);
+            return new KycStatusResponse(false, null, null, null, null);
         }
 
         IdentityDocument document = doc.get();
@@ -87,7 +87,9 @@ public class KycService {
         return new KycStatusResponse(
                 true,
                 status,
-                document.getDocumentType()
+                document.getDocumentType(),
+                document.getDocumentNumber(),
+                document.getCreatedAt()
         );
     }
 
