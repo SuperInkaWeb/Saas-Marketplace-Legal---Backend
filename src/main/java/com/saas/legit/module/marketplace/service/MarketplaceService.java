@@ -76,9 +76,14 @@ public class MarketplaceService {
             throw new IllegalArgumentException("Case request is no longer open");
         }
 
+        // Evitar propuestas de abogados no verificados
+        if (!Boolean.TRUE.equals(lawyer.getIsVerified())) {
+            throw new IllegalStateException("Solo los abogados verificados pueden enviar propuestas");
+        }
+
         // Evitar propuestas duplicadas
         lawyerProposalRepository.findByCaseRequest_IdAndLawyerProfile_IdLawyerProfile(caseRequest.getId(), lawyer.getIdLawyerProfile())
-                .ifPresent(p -> { throw new DuplicateProposalException(); });
+                .ifPresent(p -> { throw new IllegalStateException("Ya has enviado una propuesta para este caso"); });
 
         LawyerProposal proposal = new LawyerProposal();
         proposal.setCaseRequest(caseRequest);
