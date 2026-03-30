@@ -116,6 +116,7 @@ public class ProfileService {
                 .toList();
 
         return new PublicProfileResponse(
+                user.getPublicId(),
                 user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
                 user.getAvatarURL(),
                 profile.getBioLawyer(),

@@ -168,6 +168,7 @@ public class LawyerProfileConfigService {
                 .toList();
 
         return new PublicProfileResponse(
+                user.getPublicId(),
                 user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
                 user.getAvatarURL(),
                 profile.getBioLawyer(),
@@ -399,12 +400,21 @@ public class LawyerProfileConfigService {
     }
 
     private ReviewResponse toReviewResponse(Review review) {
-        String clientName = review.getClientProfile().getUser().getFirstName()
-                + " " + review.getClientProfile().getUser().getLastNameFather();
+        String clientName;
+        if (Boolean.TRUE.equals(review.getIsAnonymous())) {
+            clientName = "Usuario Anónimo";
+        } else {
+            clientName = review.getClientProfile().getUser().getFirstName()
+                    + " " + review.getClientProfile().getUser().getLastNameFather().charAt(0) + ".";
+        }
+        
         return new ReviewResponse(
+                review.getPublicId(),
                 clientName,
                 review.getRating(),
                 review.getComment(),
+                review.getReplyText(),
+                review.getRepliedAt(),
                 review.getCreatedAt()
         );
     }

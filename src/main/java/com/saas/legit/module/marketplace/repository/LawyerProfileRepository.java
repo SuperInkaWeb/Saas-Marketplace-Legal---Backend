@@ -20,6 +20,9 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
 
     Optional<LawyerProfile> findByPublicId(UUID publicId);
 
+    @Query("SELECT lp FROM LawyerProfile lp WHERE lp.user.publicId = :publicId")
+    Optional<LawyerProfile> findByUserPublicId(@Param("publicId") UUID publicId);
+
     Optional<LawyerProfile> findByUserIdUser(Long userId);
 
     boolean existsBySlugLawyerProfile(String slug);
