@@ -46,6 +46,15 @@ public class Review {
     @Column(name = "is_anonymous")
     private Boolean isAnonymous = false;
 
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
+    @Column(name = "reply_text", columnDefinition = "TEXT")
+    private String replyText;
+
+    @Column(name = "replied_at")
+    private OffsetDateTime repliedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

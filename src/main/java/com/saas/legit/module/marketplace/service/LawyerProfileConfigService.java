@@ -33,9 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.time.OffsetDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -168,6 +168,7 @@ public class LawyerProfileConfigService {
                 .toList();
 
         return new PublicProfileResponse(
+                user.getPublicId(),
                 user.getFirstName() + " " + user.getLastNameFather() + " " + user.getLastNameMother(),
                 user.getAvatarURL(),
                 profile.getBioLawyer(),
@@ -179,6 +180,7 @@ public class LawyerProfileConfigService {
                 profile.getBarRegistrationNumber(),
                 profile.getRatingAvg(),
                 profile.getReviewCount(),
+                getRatingBreakdown(profile.getIdLawyerProfile()),
                 specialtyDTOs,
                 scheduleDTOs
         );
@@ -303,7 +305,7 @@ public class LawyerProfileConfigService {
     public List<ReviewResponse> getMyReviews(Long userId) {
         LawyerProfile profile = findProfileByUserId(userId);
 
-        return reviewRepository.findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(profile.getIdLawyerProfile())
+        return reviewRepository.findByLawyerIdOrderByFeaturedFirst(profile.getIdLawyerProfile())
                 .stream()
                 .map(this::toReviewResponse)
                 .toList();
@@ -345,12 +347,29 @@ public class LawyerProfileConfigService {
                 pendingAppointments,
                 totalProposals,
                 profile.getRatingAvg(),
-                profile.getReviewCount()
+                profile.getReviewCount(),
+                getRatingBreakdown(profileId)
         );
     }
 
 
     // ── PRIVATE HELPERS ────────────────────────────────────────────────
+
+    private Map<Integer, Long> getRatingBreakdown(Long lawyerId) {
+        List<Object[]> counts = reviewRepository.countRatingsByLawyerId(lawyerId);
+        Map<Integer, Long> breakdown = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            breakdown.put(i, 0L);
+        }
+        for (Object[] row : counts) {
+            if (row[0] != null) {
+                Integer rating = ((Short) row[0]).intValue();
+                Long count = (Long) row[1];
+                breakdown.put(rating, count);
+            }
+        }
+        return breakdown;
+    }
 
     private LawyerProfile findProfileByUserId(Long userId) {
         return lawyerProfileRepository.findByUserId(userId)
@@ -399,13 +418,23 @@ public class LawyerProfileConfigService {
     }
 
     private ReviewResponse toReviewResponse(Review review) {
-        String clientName = review.getClientProfile().getUser().getFirstName()
-                + " " + review.getClientProfile().getUser().getLastNameFather();
+        String clientName;
+        if (Boolean.TRUE.equals(review.getIsAnonymous())) {
+            clientName = "Usuario Anónimo";
+        } else {
+            clientName = review.getClientProfile().getUser().getFirstName()
+                    + " " + review.getClientProfile().getUser().getLastNameFather().charAt(0) + ".";
+        }
+        
         return new ReviewResponse(
+                review.getPublicId(),
                 clientName,
                 review.getRating(),
                 review.getComment(),
-                review.getCreatedAt()
+                review.getReplyText(),
+                review.getRepliedAt(),
+                review.getCreatedAt(),
+                Boolean.TRUE.equals(review.getIsFeatured())
         );
     }
 

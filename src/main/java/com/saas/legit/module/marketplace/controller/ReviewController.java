@@ -30,4 +30,18 @@ public class ReviewController {
     public ResponseEntity<List<ReviewDTO>> getLawyerReviews(@PathVariable UUID publicId) {
         return ResponseEntity.ok(reviewService.getLawyerReviews(publicId));
     }
+
+    @PatchMapping("/{publicId}/reply")
+    public ResponseEntity<ReviewDTO> replyToReview(
+            @PathVariable UUID publicId,
+            @Valid @RequestBody ReviewDTO.ReplyRequest request) {
+        Long lawyerUserId = SecurityUtils.getCurrentUser().userId();
+        return ResponseEntity.ok(reviewService.replyToReview(publicId, request, lawyerUserId));
+    }
+
+    @PatchMapping("/{publicId}/feature")
+    public ResponseEntity<ReviewDTO> toggleFeatured(@PathVariable UUID publicId) {
+        Long lawyerUserId = SecurityUtils.getCurrentUser().userId();
+        return ResponseEntity.ok(reviewService.toggleFeatured(publicId, lawyerUserId));
+    }
 }

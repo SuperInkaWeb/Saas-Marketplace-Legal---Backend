@@ -17,7 +17,10 @@ public class ReviewDTO {
     private Short rating;
     private String comment;
     private Boolean isAnonymous;
+    private String replyText;
+    private OffsetDateTime repliedAt;
     private OffsetDateTime createdAt;
+    private Boolean isFeatured;
 
     @Data
     public static class Create {
@@ -34,5 +37,12 @@ public class ReviewDTO {
         private String comment;
 
         private Boolean isAnonymous = false;
+    }
+
+    @Data
+    public static class ReplyRequest {
+        @NotNull(message = "El comentario de respuesta es obligatorio")
+        @Size(min = 1, max = 2000, message = "La respuesta debe tener entre 1 y 2000 caracteres")
+        private String replyText;
     }
 }

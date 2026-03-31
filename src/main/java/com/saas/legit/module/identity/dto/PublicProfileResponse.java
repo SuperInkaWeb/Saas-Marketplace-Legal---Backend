@@ -3,7 +3,10 @@ package com.saas.legit.module.identity.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
+import java.util.UUID;
+
 public record PublicProfileResponse(
+    UUID publicId,
     String fullName,
     String avatarUrl,
     String bio,
@@ -15,6 +18,7 @@ public record PublicProfileResponse(
     String barRegistrationNumber,
     BigDecimal ratingAvg,
     Integer reviewCount,
+    java.util.Map<Integer, Long> ratingBreakdown,
     List<SpecialtyDTO> specialties,
     List<ScheduleDTO> schedules
 ) {
