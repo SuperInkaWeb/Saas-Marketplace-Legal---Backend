@@ -81,4 +81,20 @@ public interface LawyerProfileRepository extends JpaRepository<LawyerProfile, Lo
             @Param("lawyerProfileId") Long lawyerProfileId,
             @Param("newScore") Short newScore
     );
+
+    @Modifying
+    @Query("""
+        UPDATE LawyerProfile lp SET
+            lp.ratingAvg = CASE 
+                WHEN lp.reviewCount > 1 THEN 
+                    ROUND((lp.ratingAvg * lp.reviewCount - :deletedScore) / (lp.reviewCount - 1), 2)
+                ELSE 0.00 
+            END,
+            lp.reviewCount = GREATEST(0, lp.reviewCount - 1)
+        WHERE lp.idLawyerProfile = :lawyerId
+        """)
+    void decrementRatingAtomic(
+            @Param("lawyerId") Long lawyerId,
+            @Param("deletedScore") Short deletedScore
+    );
 }

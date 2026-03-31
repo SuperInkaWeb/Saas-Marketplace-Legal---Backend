@@ -77,7 +77,7 @@ public class ReviewService {
                 .or(() -> lawyerProfileRepository.findByPublicId(lawyerPublicId))
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el abogado con el ID: " + lawyerPublicId));
 
-        return reviewRepository.findByLawyerProfile_IdLawyerProfileOrderByCreatedAtDesc(lawyer.getIdLawyerProfile())
+        return reviewRepository.findByLawyerIdOrderByFeaturedFirst(lawyer.getIdLawyerProfile())
                 .stream().map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -101,6 +101,40 @@ public class ReviewService {
         return mapToDTO(reviewRepository.save(review));
     }
 
+    @Transactional
+    public ReviewDTO toggleFeatured(UUID reviewPublicId, Long lawyerUserId) {
+        Review review = reviewRepository.findByPublicId(reviewPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Valoración no encontrada"));
+
+        if (!review.getLawyerProfile().getUser().getIdUser().equals(lawyerUserId)) {
+            throw new UnauthorizedAccessException("No estás autorizado para destacar esta valoración");
+        }
+
+        boolean willBeFeatured = !Boolean.TRUE.equals(review.getIsFeatured());
+
+        // If we are pinning this review, clear all others first
+        if (willBeFeatured) {
+            reviewRepository.clearFeaturedForLawyer(review.getLawyerProfile().getIdLawyerProfile());
+        }
+
+        review.setIsFeatured(willBeFeatured);
+        return mapToDTO(reviewRepository.save(review));
+    }
+
+    @Transactional
+    public void deleteReview(UUID publicId) {
+        Review review = reviewRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Valoración no encontrada"));
+        
+        // Recalculate rating
+        lawyerProfileRepository.decrementRatingAtomic(
+                review.getLawyerProfile().getIdLawyerProfile(),
+                review.getRating()
+        );
+
+        reviewRepository.delete(review);
+    }
+
     private ReviewDTO mapToDTO(Review review) {
         ReviewDTO dto = new ReviewDTO();
         dto.setPublicId(review.getPublicId());
@@ -112,6 +146,7 @@ public class ReviewService {
         dto.setReplyText(review.getReplyText());
         dto.setRepliedAt(review.getRepliedAt());
         dto.setCreatedAt(review.getCreatedAt());
+        dto.setIsFeatured(Boolean.TRUE.equals(review.getIsFeatured()));
 
         if (review.getIsAnonymous()) {
             dto.setClientName("Usuario Anónimo");

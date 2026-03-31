@@ -20,6 +20,7 @@ public class ReviewDTO {
     private String replyText;
     private OffsetDateTime repliedAt;
     private OffsetDateTime createdAt;
+    private Boolean isFeatured;
 
     @Data
     public static class Create {

@@ -38,4 +38,10 @@ public class ReviewController {
         Long lawyerUserId = SecurityUtils.getCurrentUser().userId();
         return ResponseEntity.ok(reviewService.replyToReview(publicId, request, lawyerUserId));
     }
+
+    @PatchMapping("/{publicId}/feature")
+    public ResponseEntity<ReviewDTO> toggleFeatured(@PathVariable UUID publicId) {
+        Long lawyerUserId = SecurityUtils.getCurrentUser().userId();
+        return ResponseEntity.ok(reviewService.toggleFeatured(publicId, lawyerUserId));
+    }
 }

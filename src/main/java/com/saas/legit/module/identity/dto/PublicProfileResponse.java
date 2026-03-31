@@ -18,6 +18,7 @@ public record PublicProfileResponse(
     String barRegistrationNumber,
     BigDecimal ratingAvg,
     Integer reviewCount,
+    java.util.Map<Integer, Long> ratingBreakdown,
     List<SpecialtyDTO> specialties,
     List<ScheduleDTO> schedules
 ) {

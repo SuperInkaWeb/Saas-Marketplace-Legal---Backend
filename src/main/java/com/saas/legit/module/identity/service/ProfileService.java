@@ -12,13 +12,16 @@ import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.exception.LawyerProfileNotFoundException;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
+import com.saas.legit.module.marketplace.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final LawyerProfileRepository lawyerProfileRepository;
+    private final ReviewRepository reviewRepository;
 
 
     @Transactional
@@ -128,8 +132,25 @@ public class ProfileService {
                 profile.getBarRegistrationNumber(),
                 profile.getRatingAvg(),
                 profile.getReviewCount(),
+                getRatingBreakdown(profile.getIdLawyerProfile()),
                 specialtyDTOs,
                 scheduleDTOs
         );
+    }
+
+    private Map<Integer, Long> getRatingBreakdown(Long lawyerId) {
+        List<Object[]> counts = reviewRepository.countRatingsByLawyerId(lawyerId);
+        Map<Integer, Long> breakdown = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            breakdown.put(i, 0L);
+        }
+        for (Object[] row : counts) {
+            if (row[0] != null) {
+                Integer rating = ((Short) row[0]).intValue();
+                Long count = (Long) row[1];
+                breakdown.put(rating, count);
+            }
+        }
+        return breakdown;
     }
 }

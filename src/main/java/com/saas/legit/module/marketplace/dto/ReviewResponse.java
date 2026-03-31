@@ -10,5 +10,6 @@ public record ReviewResponse(
         String comment,
         String replyText,
         OffsetDateTime repliedAt,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        Boolean isFeatured
 ) {}
