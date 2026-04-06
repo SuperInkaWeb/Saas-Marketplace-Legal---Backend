@@ -1,6 +1,7 @@
 package com.saas.legit.module.marketplace.service;
 
 import com.saas.legit.core.exception.ResourceNotFoundException;
+import com.saas.legit.module.chat.service.ChatService;
 import com.saas.legit.module.identity.model.ClientProfile;
 import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
@@ -34,6 +35,7 @@ public class ClientCaseService {
     private final ClientProfileRepository clientProfileRepository;
     private final SpecialtyRepository specialtyRepository;
     private final UserRepository userRepository;
+    private final ChatService chatService;
 
     // ── CREAR CASO ─────────────────────────────────────────────────────
 
@@ -134,6 +136,9 @@ public class ClientCaseService {
         // Cerrar el caso
         caseRequest.setStatus(CaseRequestStatus.IN_PROGRESS);
         caseRequestRepository.save(caseRequest);
+
+        // Crear la sala de chat entre el cliente y el abogado aceptado
+        chatService.createRoom(caseRequest, clientProfile.getUser(), proposal.getLawyerProfile().getUser());
     }
 
     // ── CERRAR CASO ────────────────────────────────────────────────────
@@ -157,6 +162,9 @@ public class ClientCaseService {
 
         caseRequest.setStatus(CaseRequestStatus.CLOSED);
         caseRequestRepository.save(caseRequest);
+
+        // Finalizar el chat asociado al caso (cambia status a FINISHED y setea closed_at)
+        chatService.finishRoom(caseRequest.getId());
     }
 
     // ── PRIVATE HELPERS ────────────────────────────────────────────────

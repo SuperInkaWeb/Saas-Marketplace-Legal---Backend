@@ -49,6 +49,7 @@ public class NotificationService {
         return NotificationResponse.builder()
                 .publicId(notification.getPublicId())
                 .title(notification.getTitle())
+                .type(notification.getType().name())
                 .message(notification.getMessage())
                 .isRead(notification.getIsRead())
                 .actionUrl(notification.getActionUrl())

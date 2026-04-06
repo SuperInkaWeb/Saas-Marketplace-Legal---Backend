@@ -40,6 +40,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/v1/profile/public/**").permitAll()
                         .requestMatchers("/api/v1/lawyer-profile/specialties/all").permitAll()
                         .requestMatchers("/api/v1/lawyer-profile/public/**").permitAll()

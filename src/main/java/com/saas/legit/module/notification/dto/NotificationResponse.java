@@ -11,6 +11,7 @@ import java.util.UUID;
 public class NotificationResponse {
     private UUID publicId;
     private String title;
+    private String type;
     private String message;
     private Boolean isRead;
     private String actionUrl;

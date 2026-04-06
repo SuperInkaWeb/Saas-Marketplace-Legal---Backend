@@ -1,4 +1,4 @@
-package com.saas.legit.module.notification.model;
+package com.saas.legit.module.chat.model;
 
 import com.saas.legit.module.identity.model.User;
 import jakarta.persistence.*;
@@ -11,11 +11,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "chat_messages")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Notification {
+public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,24 +25,18 @@ public class Notification {
     private UUID publicId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "chat_room_id", nullable = false)
+    private ChatRoom chatRoom;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private NotificationType type;
-
-    @Column(nullable = false, length = 100)
-    private String title;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_user_id", nullable = false)
+    private User sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String message;
+    private String text;
 
     @Column(name = "is_read")
     private Boolean isRead = false;
-
-    @Column(name = "action_url", length = 255)
-    private String actionUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
