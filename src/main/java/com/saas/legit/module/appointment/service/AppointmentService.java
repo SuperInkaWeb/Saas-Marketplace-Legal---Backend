@@ -4,11 +4,14 @@ import com.saas.legit.core.exception.ResourceNotFoundException;
 import com.saas.legit.module.appointment.dto.AppointmentRequest;
 import com.saas.legit.module.appointment.dto.AppointmentResponse;
 import com.saas.legit.module.appointment.exception.InvalidAppointmentTransitionException;
+import com.saas.legit.module.chat.service.ChatService;
 import com.saas.legit.module.appointment.model.Appointment;
 import com.saas.legit.module.appointment.model.AppointmentStatus;
 import com.saas.legit.module.appointment.repository.AppointmentRepository;
 import com.saas.legit.module.identity.model.ClientProfile;
+import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
+import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.marketplace.exception.UnauthorizedAccessException;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
 import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
@@ -27,13 +30,21 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final LawyerProfileRepository lawyerProfileRepository;
+    private final UserRepository userRepository;
+    private final ChatService chatService;
 
     @Transactional
     public AppointmentResponse createAppointment(Long userId, AppointmentRequest request) {
         ClientProfile clientProfile = clientProfileRepository.findByUser_IdUser(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                    ClientProfile newProfile = new ClientProfile();
+                    newProfile.setUser(user);
+                    return clientProfileRepository.save(newProfile);
+                });
 
-        LawyerProfile lawyerProfile = lawyerProfileRepository.findByPublicId(request.getLawyerPublicId())
+        LawyerProfile lawyerProfile = lawyerProfileRepository.findByUserPublicId(request.getLawyerPublicId())
                 .orElseThrow(() -> new ResourceNotFoundException("Lawyer profile not found"));
 
         // Check for double booking
@@ -102,6 +113,11 @@ public class AppointmentService {
 
         if (newStatus == AppointmentStatus.CONFIRMED && appointment.getMeetingLink() == null) {
             appointment.setMeetingLink("https://meet.jit.si/legit-" + appointment.getPublicId());
+            chatService.createAppointmentRoom(appointment);
+        }
+
+        if (newStatus == AppointmentStatus.COMPLETED || newStatus == AppointmentStatus.CANCELLED || newStatus == AppointmentStatus.NO_SHOW) {
+            chatService.finishAppointmentRoom(appointment.getId());
         }
 
         return mapToResponse(appointmentRepository.save(appointment));
