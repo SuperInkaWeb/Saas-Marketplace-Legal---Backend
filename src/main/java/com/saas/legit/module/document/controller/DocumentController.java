@@ -4,6 +4,7 @@ import com.saas.legit.core.util.SecurityUtils;
 import com.saas.legit.module.document.dto.DocumentResponse;
 import com.saas.legit.module.document.dto.UploadDocumentRequest;
 import com.saas.legit.module.document.service.DocumentService;
+import com.saas.legit.module.document.service.DocumentGeneratorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
 public class DocumentController {
-
     private final DocumentService documentService;
+    private final DocumentGeneratorService documentGeneratorService;
 
     @PostMapping
     public ResponseEntity<DocumentResponse> uploadDocument(@Valid @RequestBody UploadDocumentRequest request) {
@@ -34,8 +35,8 @@ public class DocumentController {
     }
 
     @GetMapping("/templates")
-    public ResponseEntity<List<DocumentResponse>> getTemplates() {
-        return ResponseEntity.ok(documentService.getAvailableTemplates());
+    public ResponseEntity<List<com.saas.legit.module.document.dto.DocumentTemplateDto>> getTemplates() {
+        return ResponseEntity.ok(documentGeneratorService.getActiveTemplates());
     }
 
     @DeleteMapping("/{documentId}")

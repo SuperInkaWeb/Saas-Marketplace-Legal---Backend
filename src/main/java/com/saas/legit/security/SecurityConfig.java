@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/marketplace/cases/open").permitAll()
                         .requestMatchers("/api/v1/marketplace/cases/{publicId}").permitAll()
                         .requestMatchers("/api/v1/marketplace/specialties").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/me").authenticated()
                         .requestMatchers("/api/v1/onboarding/**").authenticated()
                         .requestMatchers("/api/v1/kyc/**").authenticated()

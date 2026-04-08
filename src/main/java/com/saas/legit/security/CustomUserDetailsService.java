@@ -31,7 +31,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (user.getRole() != null) {
-            authorities.add(new SimpleGrantedAuthority(user.getRole().getNameRol().toUpperCase()));
+            String roleName = user.getRole().getNameRol().toUpperCase();
+            if (!roleName.startsWith("ROLE_")) {
+                roleName = "ROLE_" + roleName;
+            }
+            authorities.add(new SimpleGrantedAuthority(roleName));
         }
 
         Long tenantId = null;

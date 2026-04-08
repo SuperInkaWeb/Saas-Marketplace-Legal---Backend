@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS document_templates (
+    id BIGSERIAL PRIMARY KEY,
+    public_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(100) UNIQUE NOT NULL,
+    jurisdiction VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    required_fields TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+ALTER TABLE documents
+ADD COLUMN IF NOT EXISTS case_request_id BIGINT REFERENCES case_requests(id) ON DELETE SET NULL,
+ADD COLUMN IF NOT EXISTS content TEXT,
+ADD COLUMN IF NOT EXISTS is_draft BOOLEAN DEFAULT TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_documents_case_request ON documents(case_request_id);
