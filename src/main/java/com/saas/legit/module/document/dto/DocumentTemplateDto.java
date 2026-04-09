@@ -7,5 +7,6 @@ public record DocumentTemplateDto(
         String name,
         String code,
         String jurisdiction,
-        String requiredFields
+        String requiredFields,
+        String fieldDefinitions
 ) {}

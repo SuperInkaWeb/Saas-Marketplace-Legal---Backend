@@ -17,12 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Template;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -33,8 +35,8 @@ public class DocumentGeneratorService {
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final CaseRequestRepository caseRequestRepository;
-
-    private static final Pattern STATIC_PLACEHOLDER_PATTERN = Pattern.compile("\\{\\{([^}]+)\\}\\}");
+    private final Handlebars handlebars = new Handlebars();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public DocumentGeneratorResponse generateDocument(Long userId, DocumentGeneratorRequest request) {
@@ -45,58 +47,83 @@ public class DocumentGeneratorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Template not found: " + request.getDocumentTypeCode()));
 
         String content = template.getContent();
-        Map<String, Object> userData = request.getUserData();
-        List<String> missingFields = new ArrayList<>();
+        Map<String, Object> userData = new java.util.HashMap<>(request.getUserData());
+        List<String> missingFields = new java.util.ArrayList<>();
 
-        // Process placeholders format: {{FIELD_NAME}}
-        Matcher matcher = STATIC_PLACEHOLDER_PATTERN.matcher(content);
-        StringBuffer sb = new StringBuffer();
-
-        while (matcher.find()) {
-            String fieldName = matcher.group(1).trim();
-            Object valueObj = userData.get(fieldName);
-
-            String replacement;
-            if (valueObj != null && !valueObj.toString().trim().isEmpty()) {
-                replacement = valueObj.toString();
-            } else {
-                replacement = "[COMPLETAR: " + fieldName + "]";
-                missingFields.add(fieldName);
-            }
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-        }
-        matcher.appendTail(sb);
-
-        String generatedContent = sb.toString();
-        boolean isValid = missingFields.isEmpty();
-
-        UUID savedId = null;
-        
-        if (isValid) {
-            Document draftDoc = new Document();
-            draftDoc.setUser(user);
-            draftDoc.setFileName(template.getName() + " - " + request.getJurisdiction());
-            draftDoc.setFileUrl("");
-            draftDoc.setContent(generatedContent);
-            draftDoc.setIsDraft(true);
-            draftDoc.setFileType("markdown");
-
-            if (request.getCaseRequestId() != null) {
-                CaseRequest caseRequest = caseRequestRepository.findById(request.getCaseRequestId())
-                        .orElseThrow(() -> new ResourceNotFoundException("CaseRequest not found"));
-                draftDoc.setCaseRequest(caseRequest);
+        try {
+            // 1. Escanear todos los marcadores {{VARIABLE}} en el contenido
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{\\{([^{}#/^]+)\\}\\}");
+            java.util.regex.Matcher matcher = pattern.matcher(content);
+            java.util.Set<String> detectedKeys = new java.util.HashSet<>();
+            while (matcher.find()) {
+                detectedKeys.add(matcher.group(1).trim());
             }
 
-            Document savedDraft = documentRepository.save(draftDoc);
-            savedId = savedDraft.getPublicId();
-        }
+            // 2. Mapear nombres técnicos a etiquetas amigables (Labels) si existen
+            Map<String, String> fieldLabels = new java.util.HashMap<>();
+            if (template.getFieldDefinitions() != null) {
+                List<Map<String, Object>> defs = objectMapper.readValue(template.getFieldDefinitions(), new TypeReference<>() {});
+                for (Map<String, Object> def : defs) {
+                    fieldLabels.put((String) def.get("name"), (String) def.get("label"));
+                }
+            }
 
-        return DocumentGeneratorResponse.builder()
-                .generatedContent(generatedContent)
-                .missingFields(missingFields)
-                .isValid(isValid)
-                .documentPublicId(savedId)
-                .build();
+            // 3. Crear mapa normalizado para búsqueda ultra-robusta (insensible a espacios, guiones y caso)
+            java.util.Map<String, Object> normalizedData = new java.util.HashMap<>();
+            userData.forEach((k, v) -> normalizedData.put(normalizeKey(k), v));
+
+            // 4. Validar cada clave detectada contra los datos del usuario
+            for (String key : detectedKeys) {
+                String normKey = normalizeKey(key);
+                Object value = normalizedData.get(normKey);
+                
+                if (value == null || value.toString().trim().isEmpty()) {
+                    missingFields.add(key);
+                    String friendlyLabel = fieldLabels.getOrDefault(key, key.replace("_", " "));
+                    userData.put(key, "[COMPLETAR: " + friendlyLabel + "]");
+                } else {
+                    // Asegurar que el valor esté en el mapa original con la clave exacta que espera Handlebars
+                    userData.put(key, value);
+                }
+            }
+
+            // Renderizar con Handlebars
+            Template handlebarsTemplate = handlebars.compileInline(content);
+            String generatedContent = handlebarsTemplate.apply(userData);
+            
+            boolean isValid = missingFields.isEmpty();
+            UUID savedId = null;
+
+            if (isValid) {
+                Document draftDoc = new Document();
+                draftDoc.setUser(user);
+                draftDoc.setFileName(template.getName() + " - " + request.getJurisdiction());
+                draftDoc.setFileUrl("");
+                draftDoc.setContent(generatedContent);
+                draftDoc.setIsDraft(true);
+                draftDoc.setFileType("markdown");
+
+                if (request.getCaseRequestId() != null) {
+                    CaseRequest caseRequest = caseRequestRepository.findById(request.getCaseRequestId())
+                            .orElseThrow(() -> new ResourceNotFoundException("CaseRequest not found"));
+                    draftDoc.setCaseRequest(caseRequest);
+                }
+
+                Document savedDraft = documentRepository.save(draftDoc);
+                savedId = savedDraft.getPublicId();
+            }
+
+            return DocumentGeneratorResponse.builder()
+                    .generatedContent(generatedContent)
+                    .missingFields(missingFields)
+                    .isValid(isValid)
+                    .documentPublicId(savedId)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error generating document with Handlebars", e);
+            throw new RuntimeException("Error processing document template", e);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -108,8 +135,17 @@ public class DocumentGeneratorService {
                         t.getName(),
                         t.getCode(),
                         t.getJurisdiction(),
-                        t.getRequiredFields()
+                        t.getRequiredFields(),
+                        t.getFieldDefinitions()
                 ))
                 .toList();
+    }
+
+    private String normalizeKey(String key) {
+        if (key == null) return "";
+        return key.toUpperCase()
+                .replace(" ", "")
+                .replace("_", "")
+                .trim();
     }
 }

@@ -17,6 +17,8 @@ public class DocumentResponse {
     private String fileType;
     private Long fileSizeBytes;
     private Boolean isTemplate;
+    private Boolean isDraft;
+    private String content;
     private BigDecimal price;
     private SignatureStatus signatureStatus;
     private Boolean isArchived;

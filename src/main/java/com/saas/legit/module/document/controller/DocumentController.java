@@ -34,6 +34,12 @@ public class DocumentController {
         return ResponseEntity.ok(documentService.getMyDocuments(userId));
     }
 
+    @GetMapping("/{documentId}")
+    public ResponseEntity<DocumentResponse> getDocument(@PathVariable UUID documentId) {
+        Long userId = SecurityUtils.getCurrentUser().userId();
+        return ResponseEntity.ok(documentService.getDocument(userId, documentId));
+    }
+
     @GetMapping("/templates")
     public ResponseEntity<List<com.saas.legit.module.document.dto.DocumentTemplateDto>> getTemplates() {
         return ResponseEntity.ok(documentGeneratorService.getActiveTemplates());

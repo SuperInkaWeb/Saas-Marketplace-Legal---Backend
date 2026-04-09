@@ -54,6 +54,18 @@ public class DocumentService {
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public DocumentResponse getDocument(Long userId, UUID documentPublicId) {
+        Document doc = documentRepository.findByPublicId(documentPublicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+
+        if (!doc.getUser().getIdUser().equals(userId)) {
+            throw new IllegalArgumentException("Not authorized to access this document");
+        }
+
+        return mapToResponse(doc);
+    }
+
     @Transactional
     public void archiveDocument(Long userId, UUID documentPublicId) {
         Document doc = documentRepository.findByPublicId(documentPublicId)
@@ -75,6 +87,8 @@ public class DocumentService {
                 .fileType(doc.getFileType())
                 .fileSizeBytes(doc.getFileSizeBytes())
                 .isTemplate(doc.getIsTemplate())
+                .isDraft(doc.getIsDraft())
+                .content(doc.getContent())
                 .price(doc.getPrice())
                 .signatureStatus(doc.getSignatureStatus())
                 .isArchived(doc.getIsArchived())

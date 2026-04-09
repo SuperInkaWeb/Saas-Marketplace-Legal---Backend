@@ -41,6 +41,9 @@ public class DocumentTemplate {
     @Column(name = "required_fields", columnDefinition = "TEXT")
     private String requiredFields; // Comma-separated list of required fields for validation
 
+    @Column(name = "field_definitions", columnDefinition = "TEXT")
+    private String fieldDefinitions; // JSON string with structured field metadata (type, options, validation)
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 

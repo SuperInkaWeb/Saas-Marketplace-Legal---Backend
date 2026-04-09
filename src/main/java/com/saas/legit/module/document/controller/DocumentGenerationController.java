@@ -7,6 +7,7 @@ import com.saas.legit.module.document.dto.DocumentUpdateRequest;
 import com.saas.legit.module.document.model.Document;
 import com.saas.legit.module.document.repository.DocumentRepository;
 import com.saas.legit.module.document.service.DocumentGeneratorService;
+import com.saas.legit.module.document.service.DocumentPdfService;
 import com.saas.legit.security.CustomUserDetailsService.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class DocumentGenerationController {
 
     private final DocumentGeneratorService documentGeneratorService;
     private final DocumentRepository documentRepository;
+    private final DocumentPdfService documentPdfService;
 
     @PostMapping("/generate")
     public ResponseEntity<DocumentGeneratorResponse> generateDocument(
@@ -57,5 +59,18 @@ public class DocumentGenerationController {
         documentRepository.save(doc);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<byte[]> exportDocument(@PathVariable UUID id) {
+        Document doc = documentRepository.findByPublicId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+
+        byte[] pdfBytes = documentPdfService.generatePdfFromHtml(doc.getContent(), doc.getFileName());
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"" + doc.getFileName() + ".pdf\"")
+                .body(pdfBytes);
     }
 }
