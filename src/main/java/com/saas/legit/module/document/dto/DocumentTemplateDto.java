@@ -8,5 +8,6 @@ public record DocumentTemplateDto(
         String code,
         String jurisdiction,
         String requiredFields,
-        String fieldDefinitions
+        String fieldDefinitions,
+        java.math.BigDecimal price
 ) {}

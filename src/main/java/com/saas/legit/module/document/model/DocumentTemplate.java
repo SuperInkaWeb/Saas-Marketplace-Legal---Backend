@@ -47,6 +47,9 @@ public class DocumentTemplate {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "price", precision = 10, scale = 2)
+    private java.math.BigDecimal price;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

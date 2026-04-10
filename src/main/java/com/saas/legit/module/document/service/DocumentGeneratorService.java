@@ -113,7 +113,8 @@ public class DocumentGeneratorService {
                         t.getCode(),
                         t.getJurisdiction(),
                         t.getRequiredFields(),
-                        t.getFieldDefinitions()
+                        t.getFieldDefinitions(),
+                        t.getPrice()
                 ))
                 .toList();
     }
