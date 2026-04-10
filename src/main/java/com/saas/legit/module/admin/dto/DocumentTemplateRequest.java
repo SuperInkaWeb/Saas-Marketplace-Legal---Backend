@@ -9,5 +9,6 @@ public record DocumentTemplateRequest(
         @NotBlank(message = "La jurisdicción es obligatoria") String jurisdiction,
         @NotBlank(message = "El contenido es obligatorio") String content,
         String requiredFields,
+        String fieldDefinitions,
         @NotNull(message = "El estado de la plantilla es obligatorio") Boolean isActive
 ) {}

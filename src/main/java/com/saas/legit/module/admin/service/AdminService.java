@@ -261,6 +261,7 @@ public class AdminService {
         template.setJurisdiction(request.jurisdiction());
         template.setContent(request.content());
         template.setRequiredFields(request.requiredFields());
+        template.setFieldDefinitions(request.fieldDefinitions());
         template.setIsActive(request.isActive());
     }
 
@@ -274,6 +275,7 @@ public class AdminService {
                 template.getJurisdiction(),
                 template.getContent(),
                 template.getRequiredFields(),
+                template.getFieldDefinitions(),
                 template.getIsActive(),
                 template.getCreatedAt(),
                 template.getUpdatedAt()

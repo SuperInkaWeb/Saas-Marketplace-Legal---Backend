@@ -26,6 +26,21 @@ public class DocumentGenerationController {
     private final DocumentRepository documentRepository;
     private final DocumentPdfService documentPdfService;
 
+    /**
+     * Live Preview: renders the HTML template with user data without saving.
+     * Called on every keystroke (debounced) from the frontend.
+     */
+    @PostMapping("/preview")
+    public ResponseEntity<DocumentGeneratorResponse> previewDocument(
+            @Valid @RequestBody DocumentGeneratorRequest request) {
+
+        DocumentGeneratorResponse response = documentGeneratorService.previewDocument(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Generate and persist the document as a draft.
+     */
     @PostMapping("/generate")
     public ResponseEntity<DocumentGeneratorResponse> generateDocument(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -45,17 +60,17 @@ public class DocumentGenerationController {
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
 
         if (!doc.getUser().getIdUser().equals(userDetails.userId())) {
-            // Note: In a real system, you'd check if the user is the lawyer handling the case request
             throw new IllegalArgumentException("Not authorized to update this document");
         }
 
         doc.setContent(request.getContent());
+        doc.setIsDraft(false);
         
-        // If there are no more placeholders, it might be ready to exit draft mode
-        if (!request.getContent().contains("[COMPLETAR:")) {
-            doc.setIsDraft(false);
+        // Update size in bytes
+        if (request.getContent() != null) {
+            doc.setFileSizeBytes((long) request.getContent().getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
         }
-        
+
         documentRepository.save(doc);
 
         return ResponseEntity.ok().build();

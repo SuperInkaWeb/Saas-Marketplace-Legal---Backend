@@ -10,6 +10,7 @@ public record DocumentTemplateResponse(
         String jurisdiction,
         String content,
         String requiredFields,
+        String fieldDefinitions,
         Boolean isActive,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

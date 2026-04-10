@@ -2,9 +2,6 @@ package com.saas.legit.module.document.service;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
@@ -15,19 +12,16 @@ import java.io.ByteArrayOutputStream;
 @Slf4j
 public class DocumentPdfService {
 
-    private final Parser parser = Parser.builder().build();
-    private final HtmlRenderer renderer = HtmlRenderer.builder().build();
-
-    public byte[] generatePdfFromHtml(String markdownContent, String title) {
+    /**
+     * Generates a PDF from the already-rendered HTML content.
+     * No Markdown conversion needed — the content is pure HTML from Thymeleaf.
+     */
+    public byte[] generatePdfFromHtml(String htmlContent, String title) {
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-            // 1. Convertir Markdown a HTML
-            Node document = parser.parse(markdownContent);
-            String htmlBody = renderer.render(document);
+            // Wrap the rendered fragment in a full A4-branded document shell
+            String fullHtml = buildBrandedHtml(htmlContent, title);
 
-            // 2. Envolver en plantilla con estilos
-            String fullHtml = buildBrandedHtml(htmlBody, title);
-            
-            // openhtmltopdf requiere XHTML estricto. Jsoup limpia el HTML5 y lo convierte.
+            // openhtmltopdf requires strict XHTML. Jsoup cleans and converts.
             Document doc = Jsoup.parse(fullHtml, "UTF-8");
             doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
             doc.outputSettings().escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml);
@@ -37,7 +31,7 @@ public class DocumentPdfService {
             builder.withHtmlContent(xhtml, "/");
             builder.toStream(os);
             builder.run();
-            
+
             return os.toByteArray();
         } catch (Exception e) {
             log.error("Error generating PDF", e);
@@ -46,12 +40,11 @@ public class DocumentPdfService {
     }
 
     private String buildBrandedHtml(String content, String title) {
-        // En un entorno productivo, estas fuentes deberían cargarse localmente o desde un CDN confiable
         return """
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset="UTF-8">
+            <meta charset="UTF-8"/>
             <style>
                 @page {
                     size: A4;
@@ -63,7 +56,7 @@ public class DocumentPdfService {
                         color: #64748b;
                     }
                     @top-left {
-                        content: "Legit - Documento Legal";
+                        content: "AbogHub - Documento Legal";
                         font-family: 'serif';
                         font-size: 9pt;
                         color: #94a3b8;
@@ -103,12 +96,6 @@ public class DocumentPdfService {
                     border-top: 1px solid #f1f5f9;
                     padding-top: 10pt;
                 }
-                .placeholder {
-                    background-color: #fef3c7;
-                    color: #92400e;
-                    padding: 2pt 4pt;
-                    border-radius: 2pt;
-                }
             </style>
         </head>
         <body>
@@ -122,7 +109,7 @@ public class DocumentPdfService {
             </div>
             
             <div class="footer">
-                Este documento fue generado automáticamente por la plataforma Legit.<br/>
+                Este documento fue generado automáticamente por la plataforma AbogHub.<br/>
                 La validez legal de este borrador depende de su revisión final y firma.
             </div>
         </body>
