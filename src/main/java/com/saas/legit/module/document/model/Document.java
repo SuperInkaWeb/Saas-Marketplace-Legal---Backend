@@ -42,6 +42,10 @@ public class Document {
     @JoinColumn(name = "case_request_id")
     private CaseRequest caseRequest;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matter_id")
+    private com.saas.legit.module.matter.model.Matter matter;
+
     @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 

@@ -12,6 +12,10 @@ public interface ClientProfileRepository extends JpaRepository<ClientProfile, Lo
 
     Optional<ClientProfile> findByUser(User user);
     Optional<ClientProfile> findByUser_IdUser(Long userId);
+    Optional<ClientProfile> findByPublicId(java.util.UUID publicId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM ClientProfile c JOIN c.user u WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(c.companyName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    java.util.List<ClientProfile> searchClients(@org.springframework.data.repository.query.Param("query") String query);
 
     boolean existsByUser(User user);
 }
