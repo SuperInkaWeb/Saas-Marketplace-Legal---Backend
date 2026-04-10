@@ -4,5 +4,6 @@ public enum NotificationType {
     CHAT_MESSAGE,
     APPOINTMENT_CONFIRMED,
     APPOINTMENT_CANCELLED,
-    SYSTEM
+    SYSTEM,
+    INFO
 }

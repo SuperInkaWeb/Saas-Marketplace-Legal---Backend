@@ -13,4 +13,5 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     Optional<Document> findByPublicId(UUID publicId);
     List<Document> findByUser_IdUserAndIsArchivedFalseOrderByCreatedAtDesc(Long userId);
     List<Document> findByIsTemplateTrueAndIsArchivedFalseOrderByCreatedAtDesc();
+    List<Document> findByMatter_PublicIdAndIsArchivedFalseOrderByCreatedAtDesc(UUID matterPublicId);
 }

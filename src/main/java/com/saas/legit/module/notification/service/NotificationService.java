@@ -45,6 +45,17 @@ public class NotificationService {
         notificationRepository.saveAll(unread);
     }
 
+    @Transactional
+    public void createNotification(com.saas.legit.module.identity.model.User user, com.saas.legit.module.notification.model.NotificationType type, String title, String message, String actionUrl) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setActionUrl(actionUrl);
+        notificationRepository.save(notification);
+    }
+
     private NotificationResponse mapToResponse(Notification notification) {
         return NotificationResponse.builder()
                 .publicId(notification.getPublicId())

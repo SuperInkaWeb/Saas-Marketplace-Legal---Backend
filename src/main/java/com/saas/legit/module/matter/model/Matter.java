@@ -12,6 +12,8 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -65,6 +67,15 @@ public class Matter {
 
     @Column(name = "estimated_end_date")
     private OffsetDateTime estimatedEndDate;
+
+    @OneToMany(mappedBy = "matter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MatterEvent> events = new ArrayList<>();
+
+    @OneToMany(mappedBy = "matter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MatterTask> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "matter")
+    private List<com.saas.legit.module.document.model.Document> documents = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

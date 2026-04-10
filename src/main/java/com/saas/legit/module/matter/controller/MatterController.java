@@ -38,4 +38,14 @@ public class MatterController {
         Long lawyerId = SecurityUtils.getCurrentUser().userId();
         return ResponseEntity.ok(matterService.getMatter(lawyerId, publicId));
     }
+
+    @PatchMapping("/{publicId}/status")
+    public ResponseEntity<MatterResponse> updateStatus(
+            @PathVariable UUID publicId,
+            @RequestBody java.util.Map<String, String> body) {
+        Long lawyerId = SecurityUtils.getCurrentUser().userId();
+        com.saas.legit.module.matter.model.MatterStatus status = 
+            com.saas.legit.module.matter.model.MatterStatus.valueOf(body.get("status"));
+        return ResponseEntity.ok(matterService.updateStatus(lawyerId, publicId, status));
+    }
 }

@@ -74,6 +74,20 @@ public class MatterService {
         return mapToResponse(matter);
     }
 
+    @Transactional
+    public MatterResponse updateStatus(Long lawyerId, UUID publicId, com.saas.legit.module.matter.model.MatterStatus status) {
+        Matter matter = matterRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matter not found"));
+
+        if (!matter.getLawyer().getIdUser().equals(lawyerId)) {
+            throw new IllegalArgumentException("Not authorized to update this matter");
+        }
+
+        matter.setStatus(status);
+        Matter saved = matterRepository.save(matter);
+        return mapToResponse(saved);
+    }
+
     private MatterResponse mapToResponse(Matter matter) {
         return MatterResponse.builder()
                 .publicId(matter.getPublicId())
