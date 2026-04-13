@@ -456,7 +456,8 @@ public class LawyerProfileConfigService {
                 profile.getRatingAvg(),
                 profile.getReviewCount(),
                 profile.getIsVerified(),
-                specialtyNames
+                specialtyNames,
+                profile.getBioLawyer()
         );
     }
 }

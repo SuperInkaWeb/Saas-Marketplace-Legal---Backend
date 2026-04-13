@@ -16,5 +16,6 @@ public record LawyerSearchResponse(
         BigDecimal ratingAvg,
         Integer reviewCount,
         Boolean isVerified,
-        List<String> specialties
+        List<String> specialties,
+        String bio
 ) {}

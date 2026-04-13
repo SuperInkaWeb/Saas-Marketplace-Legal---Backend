@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/profile/public/**").permitAll()
                         .requestMatchers("/api/v1/lawyer-profile/specialties/all").permitAll()
                         .requestMatchers("/api/v1/lawyer-profile/public/**").permitAll()
+                        .requestMatchers("/api/v1/reviews/lawyer/**").permitAll()
                         .requestMatchers("/api/v1/marketplace/lawyers/**").permitAll()
                         .requestMatchers("/api/v1/marketplace/lawyers").permitAll()
                         .requestMatchers("/api/v1/marketplace/cases/open").permitAll()
