@@ -6,6 +6,7 @@ import com.saas.legit.module.marketplace.dto.CaseWithProposalsResponse;
 import com.saas.legit.module.marketplace.dto.CreateProposalRequest;
 import com.saas.legit.module.marketplace.dto.LawyerProposalResponse;
 import com.saas.legit.module.marketplace.exception.DuplicateProposalException;
+import com.saas.legit.module.marketplace.exception.LawyerNotVerifiedException;
 import com.saas.legit.module.marketplace.model.CaseRequest;
 import com.saas.legit.module.marketplace.model.CaseRequestStatus;
 import com.saas.legit.module.marketplace.model.LawyerProfile;
@@ -78,12 +79,12 @@ public class MarketplaceService {
 
         // Evitar propuestas de abogados no verificados
         if (!Boolean.TRUE.equals(lawyer.getIsVerified())) {
-            throw new IllegalStateException("Solo los abogados verificados pueden enviar propuestas");
+            throw new LawyerNotVerifiedException();
         }
 
         // Evitar propuestas duplicadas
         lawyerProposalRepository.findByCaseRequest_IdAndLawyerProfile_IdLawyerProfile(caseRequest.getId(), lawyer.getIdLawyerProfile())
-                .ifPresent(p -> { throw new IllegalStateException("Ya has enviado una propuesta para este caso"); });
+                .ifPresent(p -> { throw new DuplicateProposalException(); });
 
         LawyerProposal proposal = new LawyerProposal();
         proposal.setCaseRequest(caseRequest);

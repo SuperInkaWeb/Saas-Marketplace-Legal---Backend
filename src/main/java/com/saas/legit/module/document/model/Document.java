@@ -2,6 +2,7 @@ package com.saas.legit.module.document.model;
 
 import com.saas.legit.module.appointment.model.Appointment;
 import com.saas.legit.module.identity.model.User;
+import com.saas.legit.module.marketplace.model.CaseRequest;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,14 @@ public class Document {
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "case_request_id")
+    private CaseRequest caseRequest;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matter_id")
+    private com.saas.legit.module.matter.model.Matter matter;
+
     @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
@@ -45,6 +54,12 @@ public class Document {
 
     @Column(name = "file_type", length = 50)
     private String fileType;
+
+    @Column(columnDefinition = "TEXT")
+    private String content; // Draft markdown or HTML before PDF conversion
+
+    @Column(name = "is_draft")
+    private Boolean isDraft = true;
 
     @Column(name = "file_size_bytes")
     private Long fileSizeBytes;

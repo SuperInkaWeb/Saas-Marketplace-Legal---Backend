@@ -14,6 +14,8 @@ import com.saas.legit.module.marketplace.repository.LawyerProfileRepository;
 import com.saas.legit.module.marketplace.repository.ReviewRepository;
 import com.saas.legit.module.marketplace.repository.SpecialtyRepository;
 import com.saas.legit.module.marketplace.dto.SpecialtyResponse;
+import com.saas.legit.module.document.model.DocumentTemplate;
+import com.saas.legit.module.document.repository.DocumentTemplateRepository;
 import com.saas.legit.module.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ public class AdminService {
     private final PaymentRepository paymentRepository;
     private final IdentityDocumentRepository identityDocumentRepository;
     private final SpecialtyRepository specialtyRepository;
+    private final DocumentTemplateRepository documentTemplateRepository;
 
     // ── DASHBOARD METRICS ─────────────────────────────────────────────
 
@@ -211,7 +214,73 @@ public class AdminService {
         return mapToSpecialtyResponse(specialty);
     }
 
+    // ── DOCUMENT TEMPLATES MANAGEMENT ────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<DocumentTemplateResponse> getAllDocumentTemplates() {
+        return documentTemplateRepository.findAll().stream()
+                .map(this::mapToDocumentTemplateResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public DocumentTemplateResponse getDocumentTemplate(UUID publicId) {
+        DocumentTemplate template = documentTemplateRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Plantilla no encontrada"));
+        return mapToDocumentTemplateResponse(template);
+    }
+
+    @Transactional
+    public DocumentTemplateResponse createDocumentTemplate(DocumentTemplateRequest request) {
+        DocumentTemplate template = new DocumentTemplate();
+        updateTemplateFromRequest(template, request);
+        template = documentTemplateRepository.save(template);
+        return mapToDocumentTemplateResponse(template);
+    }
+
+    @Transactional
+    public DocumentTemplateResponse updateDocumentTemplate(UUID publicId, DocumentTemplateRequest request) {
+        DocumentTemplate template = documentTemplateRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Plantilla no encontrada"));
+        
+        updateTemplateFromRequest(template, request);
+        template = documentTemplateRepository.save(template);
+        return mapToDocumentTemplateResponse(template);
+    }
+
+    @Transactional
+    public void deleteDocumentTemplate(UUID publicId) {
+        DocumentTemplate template = documentTemplateRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Plantilla no encontrada"));
+        documentTemplateRepository.delete(template);
+    }
+
+    private void updateTemplateFromRequest(DocumentTemplate template, DocumentTemplateRequest request) {
+        template.setName(request.name());
+        template.setCode(request.code());
+        template.setJurisdiction(request.jurisdiction());
+        template.setContent(request.content());
+        template.setRequiredFields(request.requiredFields());
+        template.setFieldDefinitions(request.fieldDefinitions());
+        template.setIsActive(request.isActive());
+    }
+
     // ── PRIVATE MAPPERS ───────────────────────────────────────────────
+
+    private DocumentTemplateResponse mapToDocumentTemplateResponse(DocumentTemplate template) {
+        return new DocumentTemplateResponse(
+                template.getPublicId(),
+                template.getName(),
+                template.getCode(),
+                template.getJurisdiction(),
+                template.getContent(),
+                template.getRequiredFields(),
+                template.getFieldDefinitions(),
+                template.getIsActive(),
+                template.getCreatedAt(),
+                template.getUpdatedAt()
+        );
+    }
 
     private SpecialtyResponse mapToSpecialtyResponse(Specialty specialty) {
         return new SpecialtyResponse(

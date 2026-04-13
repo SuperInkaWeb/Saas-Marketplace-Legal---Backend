@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.stream.Collectors;
 
@@ -145,6 +146,13 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(LawyerNotVerifiedException.class)
+    public ProblemDetail handleLawyerNotVerified(LawyerNotVerifiedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Perfil No Verificado");
+        return problem;
+    }
+
     @ExceptionHandler(DuplicateReviewException.class)
     public ProblemDetail handleDuplicateReview(DuplicateReviewException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
@@ -173,6 +181,13 @@ public class GlobalExceptionHandler {
                 "La ruta solicitada no existe: " + ex.getRequestURL()
         );
         problem.setTitle("Ruta No Encontrada");
+        return problem;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "No tienes los permisos necesarios para realizar esta acción.");
+        problem.setTitle("Acceso Denegado por Rol");
         return problem;
     }
 

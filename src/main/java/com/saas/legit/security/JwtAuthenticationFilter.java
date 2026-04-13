@@ -53,7 +53,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                 if (role != null) {
-                    authorities.add(new SimpleGrantedAuthority(role));
+                    String roleName = role.toUpperCase();
+                    if (!roleName.startsWith("ROLE_")) {
+                        roleName = "ROLE_" + roleName;
+                    }
+                    authorities.add(new SimpleGrantedAuthority(roleName));
                 }
 
                 CustomUserDetailsService.CustomUserDetails userDetails =

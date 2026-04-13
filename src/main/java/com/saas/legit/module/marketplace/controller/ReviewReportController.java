@@ -32,7 +32,7 @@ public class ReviewReportController {
     }
 
     @GetMapping("/admin/reports")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ReviewReportDTO>> getPendingReports() {
         return ResponseEntity.ok(reportService.getPendingReports().stream()
                 .map(this::mapToDTO)
@@ -40,7 +40,7 @@ public class ReviewReportController {
     }
 
     @PatchMapping("/admin/reports/{publicId}/resolve")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> resolveReport(
             @PathVariable UUID publicId,
             @RequestParam boolean deleteReview) {

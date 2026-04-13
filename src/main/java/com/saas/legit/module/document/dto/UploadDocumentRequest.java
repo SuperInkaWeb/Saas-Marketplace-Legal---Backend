@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 public class UploadDocumentRequest {
@@ -17,4 +18,5 @@ public class UploadDocumentRequest {
     private Long fileSizeBytes;
     private Boolean isTemplate;
     private BigDecimal price;
+    private UUID matterPublicId;
 }

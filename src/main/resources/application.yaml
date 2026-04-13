@@ -3,6 +3,8 @@ spring:
     name: legit
   profiles:
     active: prod
+  flyway:
+    placeholder-replacement: false
 
 server:
   port: ${PORT:8080}
