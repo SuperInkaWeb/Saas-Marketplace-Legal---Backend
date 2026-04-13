@@ -77,6 +77,9 @@ public class Matter {
     @OneToMany(mappedBy = "matter")
     private List<com.saas.legit.module.document.model.Document> documents = new ArrayList<>();
 
+    @OneToMany(mappedBy = "matter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MatterParticipant> participants = new ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

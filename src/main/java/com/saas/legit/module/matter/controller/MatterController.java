@@ -28,8 +28,16 @@ public class MatterController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MatterResponse>> getMyMatters() {
+    public ResponseEntity<List<MatterResponse>> getMyMatters(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
         Long lawyerId = SecurityUtils.getCurrentUser().userId();
+
+        // If search or status filters are provided, use search endpoint
+        if ((search != null && !search.isBlank()) || (status != null && !status.isBlank())) {
+            return ResponseEntity.ok(matterService.searchMatters(lawyerId, search, status));
+        }
+
         return ResponseEntity.ok(matterService.getMyMatters(lawyerId));
     }
 

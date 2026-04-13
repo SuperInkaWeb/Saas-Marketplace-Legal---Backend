@@ -1,6 +1,7 @@
 package com.saas.legit.module.matter.service;
 
 import com.saas.legit.core.exception.ResourceNotFoundException;
+import com.saas.legit.module.audit.service.AuditLogService;
 import com.saas.legit.module.identity.model.ClientProfile;
 import com.saas.legit.module.identity.model.User;
 import com.saas.legit.module.identity.repository.ClientProfileRepository;
@@ -8,6 +9,7 @@ import com.saas.legit.module.identity.repository.UserRepository;
 import com.saas.legit.module.matter.dto.MatterCreateRequest;
 import com.saas.legit.module.matter.dto.MatterResponse;
 import com.saas.legit.module.matter.model.Matter;
+import com.saas.legit.module.matter.model.MatterStatus;
 import com.saas.legit.module.matter.repository.MatterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class MatterService {
     private final MatterRepository matterRepository;
     private final UserRepository userRepository;
     private final ClientProfileRepository clientProfileRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public MatterResponse createMatter(Long lawyerId, MatterCreateRequest request) {
@@ -52,6 +55,11 @@ public class MatterService {
         matter.setNumber("EXP-" + System.currentTimeMillis() % 100000);
 
         Matter saved = matterRepository.save(matter);
+
+        auditLogService.log("MATTER", saved.getId(), "CREATED", lawyerId,
+                null, saved.getStatus().name(),
+                "Matter created: " + saved.getTitle());
+
         return mapToResponse(saved);
     }
 
@@ -60,6 +68,29 @@ public class MatterService {
         return matterRepository.findByLawyer_IdUserOrderByCreatedAtDesc(lawyerId)
                 .stream().map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatterResponse> searchMatters(Long lawyerId, String search, String statusStr) {
+        MatterStatus status = null;
+        if (statusStr != null && !statusStr.isBlank()) {
+            try {
+                status = MatterStatus.valueOf(statusStr);
+            } catch (IllegalArgumentException ignored) {
+                // Invalid status filter, ignore
+            }
+        }
+
+        String searchTerm = (search != null && !search.isBlank()) ? search.trim() : null;
+
+        return matterRepository.searchMatters(
+                lawyerId, 
+                searchTerm, 
+                searchTerm != null, 
+                status, 
+                status != null
+        ).stream().map(this::mapToResponse)
+         .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +106,7 @@ public class MatterService {
     }
 
     @Transactional
-    public MatterResponse updateStatus(Long lawyerId, UUID publicId, com.saas.legit.module.matter.model.MatterStatus status) {
+    public MatterResponse updateStatus(Long lawyerId, UUID publicId, MatterStatus status) {
         Matter matter = matterRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matter not found"));
 
@@ -83,8 +114,14 @@ public class MatterService {
             throw new IllegalArgumentException("Not authorized to update this matter");
         }
 
+        String oldStatus = matter.getStatus().name();
         matter.setStatus(status);
         Matter saved = matterRepository.save(matter);
+
+        auditLogService.log("MATTER", saved.getId(), "STATUS_CHANGE", lawyerId,
+                oldStatus, status.name(),
+                "Status changed from " + oldStatus + " to " + status.name());
+
         return mapToResponse(saved);
     }
 
