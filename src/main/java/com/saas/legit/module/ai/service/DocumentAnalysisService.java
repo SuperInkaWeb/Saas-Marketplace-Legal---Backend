@@ -33,7 +33,7 @@ public class DocumentAnalysisService {
         this.pdfParser = new ApachePdfBoxDocumentParser();
     }
 
-    public String analyzeDocument(MultipartFile file) throws Exception {
+    public String analyzeDocument(MultipartFile file, String userPrompt) throws Exception {
         // Extraer texto del documento PDF
         String docText = "";
         try (InputStream is = file.getInputStream()) {
@@ -46,24 +46,28 @@ public class DocumentAnalysisService {
             docText = docText.substring(0, 20000);
         }
 
-        String prompt = "Actúa como un Asistente Jurídico experto de nivel senior.\n" +
-                "Tu tarea es analizar el documento legal adjunto y extraer la información clave.\n\n" +
-                "Directrices del análisis:\n" +
-                "1. Resumen principal: Redacta un párrafo claro, objetivo y conciso sobre el propósito del documento.\n" +
-                "2. Cláusulas de riesgo: Identifica y enumera contingencias, penalidades, obligaciones financieras o términos ambiguos.\n" +
-                "3. Recomendaciones: Proporciona pasos accionables a nivel legal para mitigar los riesgos encontrados.\n\n" +
-                "Reglas estrictas:\n" +
-                "- Si el texto proporcionado no es un documento legal o es ilegible, devuelve un error indicándolo en el campo 'error'.\n" +
-                "- Mantén un tono profesional, pero comprensible.\n" +
-                "- Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código markdown, usando la siguiente estructura:\n" +
-                "{\n" +
-                "  \"resumen\": \"texto\",\n" +
-                "  \"riesgos\": [\"riesgo 1\", \"riesgo 2\"],\n" +
-                "  \"recomendaciones\": [\"rec 1\", \"rec 2\"],\n" +
-                "  \"error\": null\n" +
-                "}\n\n" +
-                "Documento:\n" + docText;
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("Actúa como un Asistente Jurídico experto de nivel senior.\n")
+                .append("Tu tarea es analizar el documento legal adjunto.\n\n");
 
-        return chatModel.generate(prompt);
+        if (userPrompt != null && !userPrompt.isBlank()) {
+            promptBuilder.append("Instrucciones específicas del usuario:\n")
+                    .append(userPrompt).append("\n\n")
+                    .append("Por favor, prioriza responder a las instrucciones del usuario, pero mantén un formato estructurado y profesional en Markdown.\n\n");
+        } else {
+            promptBuilder.append("Directrices del análisis estándar:\n")
+                    .append("1. Resumen principal: Redacta un párrafo claro, objetivo y conciso sobre el propósito del documento.\n")
+                    .append("2. Cláusulas de riesgo: Identifica y enumera contingencias, penalidades, obligaciones financieras o términos ambiguos.\n")
+                    .append("3. Recomendaciones: Proporciona pasos accionables a nivel legal para mitigar los riesgos encontrados.\n\n");
+        }
+
+        promptBuilder.append("Reglas estrictas:\n")
+                .append("- Si el texto proporcionado no es un documento legal o es ilegible, infórmalo cortésmente.\n")
+                .append("- Mantén un tono profesional, pero comprensible.\n")
+                .append("- Responde utilizando formato Markdown enriquecido (negritas, listas, subtítulos).\n")
+                .append("- NO devuelvas JSON. Responde con texto directo y bien estructurado.\n\n")
+                .append("Documento:\n").append(docText);
+
+        return chatModel.generate(promptBuilder.toString());
     }
 }

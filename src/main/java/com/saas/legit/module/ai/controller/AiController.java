@@ -82,9 +82,11 @@ public class AiController {
     }
 
     @PostMapping("/analyze-document")
-    public ResponseEntity<DocumentAnalysisResponse> analyzeDocument(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<DocumentAnalysisResponse> analyzeDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "prompt", required = false) String prompt) {
         try {
-            String analysisResult = documentAnalysisService.analyzeDocument(file);
+            String analysisResult = documentAnalysisService.analyzeDocument(file, prompt);
             return ResponseEntity.ok(new DocumentAnalysisResponse(analysisResult));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new DocumentAnalysisResponse("Error analyzing document: " + e.getMessage()));
