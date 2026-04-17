@@ -121,6 +121,21 @@ public class DocumentGeneratorService {
 
     // ── Private helpers ─────────────────────────────────────────────────
 
+    /** Marker used to tag hidden/optional fields that should not be shown in the document */
+    private static final String HIDDEN_MARKER = "__CAMPO_OCULTO__";
+
+    /** Keys that are considered spouse-related and should be hidden when marital status is not CASADO/CONVIVIENTE */
+    private static final java.util.Set<String> SPOUSE_KEYS = java.util.Set.of(
+            "NOMBRE_CONYUGE", "NUM_DOC_CONYUGE", "DNI_CONYUGE",
+            "APELLIDO_CONYUGE", "CONYUGE_NOMBRE", "CONYUGE_DNI", "CONYUGE_DOC",
+            "NOMBRE_ESPOSA", "NOMBRE_ESPOSO"
+    );
+
+    /** Marital status values that require showing the spouse section */
+    private static final java.util.Set<String> MARRIED_STATUSES = java.util.Set.of(
+            "CASADO", "CASADA", "CONVIVIENTE"
+    );
+
     private DocumentGeneratorResponse renderTemplate(DocumentTemplate template, Map<String, Object> userData) {
         try {
             String content = template.getContent();
@@ -134,20 +149,38 @@ public class DocumentGeneratorService {
                 detectedKeys.add(matcher.group(1).trim());
             }
 
-            // 2. Build Thymeleaf context with user data
+            // 2. Determine whether the marital status requires spouse section
+            String maritalStatus = findMaritalStatus(userData);
+            boolean showSpouseSection = maritalStatus == null || MARRIED_STATUSES.contains(maritalStatus.toUpperCase().trim());
+
+            // 3. Build Thymeleaf context with user data
             Context ctx = new Context();
             for (String key : detectedKeys) {
                 Object value = userData.get(key);
-                if (value == null || value.toString().trim().isEmpty()) {
-                    missingFields.add(key);
-                    // Leave key unset so Thymeleaf renders the original blank-line fallback
+                boolean isSpouseKey = SPOUSE_KEYS.contains(key) ||
+                        key.toUpperCase().contains("CONYUGE") ||
+                        key.toUpperCase().contains("ESPOS");
+
+                if (isSpouseKey && !showSpouseSection) {
+                    // Hide spouse fields by injecting the removal marker
+                    ctx.setVariable(key, HIDDEN_MARKER);
+                } else if (value == null || value.toString().trim().isEmpty()) {
+                    if (isSpouseKey) {
+                        // Optional spouse field and no value — also mark for removal
+                        ctx.setVariable(key, HIDDEN_MARKER);
+                    } else {
+                        missingFields.add(key);
+                    }
                 } else {
-                    ctx.setVariable(key, value.toString());
+                    ctx.setVariable(key, value.toString().toUpperCase());
                 }
             }
 
-            // 3. Render with Thymeleaf
+            // 4. Render with Thymeleaf
             String generatedContent = documentTemplateEngine.process(content, ctx);
+
+            // 5. Post-process: remove any HTML block (<p>, <tr>, <li>) that contains the hidden marker
+            generatedContent = removeHiddenBlocks(generatedContent);
 
             boolean isValid = missingFields.isEmpty();
 
@@ -162,5 +195,41 @@ public class DocumentGeneratorService {
             log.error("Error generating document with Thymeleaf", e);
             throw new RuntimeException("Error processing document template", e);
         }
+    }
+
+    /** Finds the marital status value from userData, checking common key names */
+    private String findMaritalStatus(Map<String, Object> userData) {
+        for (java.util.Map.Entry<String, Object> entry : userData.entrySet()) {
+            String key = entry.getKey().toUpperCase();
+            if (key.contains("ESTADO_CIVIL") || key.contains("ESTADOCIVIL")) {
+                Object val = entry.getValue();
+                return val != null ? val.toString() : null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Removes entire HTML block-level elements (<p>, <tr>, <li>, <div>) that contain the HIDDEN_MARKER.
+     * This ensures conditional sections (like the spouse block) are fully removed from the generated document.
+     */
+    private String removeHiddenBlocks(String html) {
+        // Remove <p> blocks containing the marker
+        html = removeTagsContainingMarker(html, "p");
+        // Remove <tr> blocks containing the marker (tables with spouse signature)
+        html = removeTagsContainingMarker(html, "tr");
+        // Remove <li> blocks containing the marker
+        html = removeTagsContainingMarker(html, "li");
+        // Remove any remaining standalone marker text
+        html = html.replace(HIDDEN_MARKER, "");
+        return html;
+    }
+
+    private String removeTagsContainingMarker(String html, String tag) {
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                "<" + tag + "(?:[^>]*)>(?:(?!</" + tag + ">)[\\s\\S])*" + java.util.regex.Pattern.quote(HIDDEN_MARKER) + "(?:(?!</" + tag + ">)[\\s\\S])*</" + tag + ">",
+                java.util.regex.Pattern.CASE_INSENSITIVE
+        );
+        return p.matcher(html).replaceAll("");
     }
 }

@@ -123,6 +123,18 @@ public class AdminService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void deleteUser(UUID publicId) {
+        User user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        try {
+            userRepository.delete(user);
+            userRepository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("No se puede eliminar la cuenta. El usuario tiene registros dependientes (ej: casos, transacciones, mensajes vinculados) que impiden su eliminación segura.");
+        }
+    }
+
     // ── LAWYER VERIFICATION ───────────────────────────────────────────
 
     @Transactional(readOnly = true)
