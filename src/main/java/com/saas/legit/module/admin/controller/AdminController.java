@@ -57,6 +57,12 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/users/{publicId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID publicId) {
+        adminService.deleteUser(publicId);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── LAWYER VERIFICATION ───────────────────────────────────────────
 
     @GetMapping("/lawyers/pending")
