@@ -142,7 +142,7 @@ public class DocumentGeneratorService {
                     missingFields.add(key);
                     // Leave key unset so Thymeleaf renders the original blank-line fallback
                 } else {
-                    ctx.setVariable(key, value.toString());
+                    ctx.setVariable(key, value.toString().toUpperCase());
                 }
             }
 
