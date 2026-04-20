@@ -39,9 +39,6 @@ public class AiController {
     @PostMapping("/chat")
     @Transactional
     public ResponseEntity<ChatResponse> chat(@Valid @RequestBody ChatRequest request, Authentication authentication) {
-        // En un caso real, validaríamos aquí que el usuario tiene suscripción.
-        // Lo haremos a través de un interceptor o anotación en el siguiente paso.
-
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

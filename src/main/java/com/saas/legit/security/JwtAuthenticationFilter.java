@@ -19,6 +19,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -39,50 +40,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String jwt = authHeader.substring(7);
 
-        jwtService.validateAndExtractClaims(jwt).ifPresent(claims -> {
+        try {
+            jwtService.validateAndExtractClaims(jwt).ifPresentOrElse(claims -> {
+                String userIdStr = claims.getSubject();
+                String email = claims.get("email", String.class);
+                Long tenantId = claims.get("tenant", Long.class);
+                String role = claims.get("role", String.class);
 
-            String userIdStr = claims.getSubject();
-            String email = claims.get("email", String.class);
-            Long tenantId = claims.get("tenant", Long.class);
-            String role = claims.get("role", String.class);
-
-            if (userIdStr != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                Long userId = Long.parseLong(userIdStr);
-
-                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                if (role != null) {
-                    String roleName = role.toUpperCase();
-                    if (!roleName.startsWith("ROLE_")) {
-                        roleName = "ROLE_" + roleName;
+                if (userIdStr != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    Long userId = Long.parseLong(userIdStr);
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    if (role != null) {
+                        String roleName = role.toUpperCase();
+                        if (!roleName.startsWith("ROLE_")) {
+                            roleName = "ROLE_" + roleName;
+                        }
+                        authorities.add(new SimpleGrantedAuthority(roleName));
                     }
-                    authorities.add(new SimpleGrantedAuthority(roleName));
+
+                    CustomUserDetailsService.CustomUserDetails userDetails =
+                            new CustomUserDetailsService.CustomUserDetails(userId, email, null, authorities, tenantId);
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    log.debug("Usuario {} autenticado exitosamente", email);
                 }
-
-                CustomUserDetailsService.CustomUserDetails userDetails =
-                        new CustomUserDetailsService.CustomUserDetails(
-                                userId,
-                                email,
-                                null,
-                                authorities,
-                                tenantId
-                        );
-
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                authorities
-                        );
-
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-        });
+            }, () -> log.warn("Token JWT inválido o vacío recibido de {}", request.getRemoteAddr()));
+        } catch (Exception e) {
+            log.error("Fallo durante el procesamiento del token JWT: {}", e.getMessage());
+        }
 
         filterChain.doFilter(request, response);
     }
