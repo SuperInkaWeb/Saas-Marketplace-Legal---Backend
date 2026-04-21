@@ -84,6 +84,28 @@ public class DocumentService {
         return mapToResponse(saved);
     }
 
+    @Transactional
+    public DocumentResponse uploadGeneralDocument(Long userId, MultipartFile file) throws IOException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Upload to Cloudinary - User personal vault folder
+        String folder = "users/" + userId + "/vault";
+        String fileUrl = cloudinaryService.uploadFile(file, folder);
+
+        Document doc = new Document();
+        doc.setUser(user);
+        doc.setFileName(file.getOriginalFilename());
+        doc.setFileUrl(fileUrl);
+        doc.setFileType(file.getContentType());
+        doc.setFileSizeBytes(file.getSize());
+        doc.setIsDraft(false);
+        doc.setIsTemplate(false);
+
+        Document saved = documentRepository.save(doc);
+        return mapToResponse(saved);
+    }
+
     @Transactional(readOnly = true)
     public List<DocumentResponse> getMyDocuments(Long userId) {
         return documentRepository.findByUser_IdUserAndIsArchivedFalseOrderByCreatedAtDesc(userId)

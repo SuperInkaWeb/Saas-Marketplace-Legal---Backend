@@ -39,6 +39,14 @@ public class DocumentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/upload")
+    public ResponseEntity<DocumentResponse> uploadGeneralDocument(
+            @RequestParam("file") MultipartFile file) throws IOException {
+        Long userId = SecurityUtils.getCurrentUser().userId();
+        DocumentResponse response = documentService.uploadGeneralDocument(userId, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @GetMapping("/me")
     public ResponseEntity<List<DocumentResponse>> getMyDocuments() {
         Long userId = SecurityUtils.getCurrentUser().userId();

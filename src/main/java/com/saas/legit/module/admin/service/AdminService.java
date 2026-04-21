@@ -18,6 +18,7 @@ import com.saas.legit.module.document.model.DocumentTemplate;
 import com.saas.legit.module.document.repository.DocumentTemplateRepository;
 import com.saas.legit.module.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminService {
 
     private final UserRepository userRepository;
@@ -119,6 +121,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         AccountStatus newStatus = AccountStatus.valueOf(request.accountStatus());
+        log.info("Cambiando estado de cuenta para usuario {}: {} -> {}", publicId, user.getAccountStatus(), newStatus);
         user.setAccountStatus(newStatus);
         userRepository.save(user);
     }
@@ -127,10 +130,15 @@ public class AdminService {
     public void deleteUser(UUID publicId) {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        
+        log.warn("Solicitud de eliminación permanente para usuario: {} ({})", user.getFullName(), publicId);
+        
         try {
             userRepository.delete(user);
             userRepository.flush();
+            log.info("Usuario eliminado exitosamente: {}", publicId);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.error("Fallo al eliminar usuario {} por restricción de integridad.", publicId);
             throw new IllegalArgumentException("No se puede eliminar la cuenta. El usuario tiene registros dependientes (ej: casos, transacciones, mensajes vinculados) que impiden su eliminación segura.");
         }
     }
@@ -161,9 +169,12 @@ public class AdminService {
         profile.setVerificationStatus(newStatus);
         profile.setIsVerified(newStatus == LawyerProfile.VerificationStatus.VERIFIED);
 
+        log.info("Verificación de abogado {}: {}", userPublicId, newStatus);
+
         // Also verify the identity document if approving
         if (newStatus == LawyerProfile.VerificationStatus.VERIFIED) {
             identityDocumentRepository.findByUser(user).ifPresent(doc -> {
+                log.info("Verificando documento de identidad asociado para usuario {}", userPublicId);
                 doc.setIsVerified(true);
                 doc.setVerifiedAt(OffsetDateTime.now());
                 identityDocumentRepository.save(doc);

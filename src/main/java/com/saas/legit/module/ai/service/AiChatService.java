@@ -1,19 +1,18 @@
 package com.saas.legit.module.ai.service;
 
 import com.saas.legit.module.ai.model.AiChatMessage;
-import com.saas.legit.module.ai.model.AiChatSession;
 import com.saas.legit.module.ai.model.AiMessageRole;
-import com.saas.legit.module.identity.model.User;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.output.Response;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,8 @@ public class AiChatService {
         this.chatModel = OpenAiChatModel.builder()
                 .baseUrl("https://api.groq.com/openai/v1")
                 .apiKey(openAiApiKey)
-                .modelName("llama-3.3-70b-versatile") // Modelo veloz y actualizado de Groq
-                .temperature(0.0) // Reduce radicalmente las "alucinaciones" (invención de datos)
+                .modelName("llama-3.3-70b-versatile")
+                .temperature(0.0)
                 .build();
     }
 
@@ -51,17 +50,17 @@ public class AiChatService {
         // Load history
         for (AiChatMessage msg : history) {
             if (msg.getRole() == AiMessageRole.USER) {
-                messages.add(new dev.langchain4j.data.message.UserMessage(msg.getContent()));
+                messages.add(new UserMessage(msg.getContent()));
             } else if (msg.getRole() == AiMessageRole.ASSISTANT) {
                 messages.add(new AiMessage(msg.getContent()));
             }
         }
 
         // Add current message
-        messages.add(new dev.langchain4j.data.message.UserMessage(newUserMessage));
+        messages.add(new UserMessage(newUserMessage));
 
         // Get AI Response
-        dev.langchain4j.model.output.Response<AiMessage> response = chatModel.generate(messages);
+        Response<AiMessage> response = chatModel.generate(messages);
         
         return response.content().text();
     }

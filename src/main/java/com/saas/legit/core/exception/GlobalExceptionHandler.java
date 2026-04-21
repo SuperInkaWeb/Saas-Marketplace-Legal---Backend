@@ -191,6 +191,24 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("Conflicto de integridad de datos: {}", ex.getMessage());
+        
+        String detail = "No se puede completar la operación debido a que el registro está siendo utilizado por otros módulos o ya existe un registro similar.";
+        
+        // Attempt to extract more specific info if available
+        if (ex.getMessage() != null && ex.getMessage().contains("ForeignKeyViolation")) {
+            detail = "No se puede eliminar o modificar este registro porque tiene datos asociados en otros módulos.";
+        } else if (ex.getMessage() != null && ex.getMessage().contains("UniqueViolation")) {
+            detail = "Ya existe un registro con estos datos únicos.";
+        }
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detail);
+        problem.setTitle("Conflicto de Datos");
+        return problem;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception ex) {
         log.error("Error inesperado: {}", String.valueOf(ex));
