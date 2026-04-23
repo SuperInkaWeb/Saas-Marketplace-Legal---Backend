@@ -53,6 +53,7 @@ public class MarketplaceService {
                 .title(caseRequest.getTitle())
                 .description(caseRequest.getDescription())
                 .budget(caseRequest.getBudget())
+                .currency(caseRequest.getCurrency())
                 .specialtyName(caseRequest.getSpecialty() != null
                         ? caseRequest.getSpecialty().getName() : null)
                 .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 
@@ -91,6 +92,7 @@ public class MarketplaceService {
         proposal.setLawyerProfile(lawyer);
         proposal.setProposalText(request.getProposalText());
         proposal.setProposedFee(request.getProposedFee());
+        proposal.setCurrency(request.getCurrency() != null ? request.getCurrency() : caseRequest.getCurrency());
         proposal.setStatus(ProposalStatus.PENDING);
 
         LawyerProposal saved = lawyerProposalRepository.save(proposal);
@@ -107,6 +109,7 @@ public class MarketplaceService {
                 .title(caseRequest.getTitle())
                 .description(caseRequest.getDescription())
                 .budget(caseRequest.getBudget())
+                .currency(caseRequest.getCurrency())
                 .specialtyName(caseRequest.getSpecialty() != null ? caseRequest.getSpecialty().getName() : null)
                 .status(caseRequest.getStatus())
                 .createdAt(caseRequest.getCreatedAt())
@@ -121,6 +124,7 @@ public class MarketplaceService {
                 .lawyerSlug(proposal.getLawyerProfile().getSlugLawyerProfile())
                 .proposalText(proposal.getProposalText())
                 .proposedFee(proposal.getProposedFee())
+                .currency(proposal.getCurrency())
                 .status(proposal.getStatus())
                 .lawyerAvatarUrl(proposal.getLawyerProfile().getUser().getAvatarURL())
                 .createdAt(proposal.getCreatedAt())

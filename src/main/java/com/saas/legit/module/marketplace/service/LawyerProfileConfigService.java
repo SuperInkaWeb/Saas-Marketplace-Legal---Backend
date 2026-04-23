@@ -60,14 +60,14 @@ public class LawyerProfileConfigService {
         requireStep(user);
         requireRole(user);
 
-        if (lawyerProfileRepository.findByUserId(user.getIdUser()).isPresent()) {
-            user.setOnboardingStep(OnboardingStep.KYC_PENDING);
-            userRepository.save(user);
-            return;
-        }
+        LawyerProfile profile = lawyerProfileRepository.findByUserId(user.getIdUser())
+                .orElseGet(() -> {
+                    String slug = generateUniqueSlug(user.getFirstName(), user.getLastNameFather());
+                    return new LawyerProfile(user, slug, request.city(), request.country());
+                });
 
-        String slug = generateUniqueSlug(user.getFirstName(), user.getLastNameFather());
-        LawyerProfile profile = new LawyerProfile(user, slug, request.city(), request.country());
+        profile.setCity(request.city());
+        profile.setCountry(request.country());
         lawyerProfileRepository.save(profile);
 
         user.setOnboardingStep(OnboardingStep.KYC_PENDING);

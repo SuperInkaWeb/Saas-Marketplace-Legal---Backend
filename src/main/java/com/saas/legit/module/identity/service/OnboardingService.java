@@ -61,17 +61,15 @@ public class OnboardingService {
         requireStep(user, OnboardingStep.PROFILE_PENDING);
         requireRole(user);
 
-        if (clientProfileRepository.findByUser(user).isPresent()) {
-            user.setOnboardingStep(OnboardingStep.COMPLETED);
-            userRepository.save(user);
-            return;
-        }
+        ClientProfile profile = clientProfileRepository.findByUser(user)
+                .orElseGet(() -> {
+                    ClientProfile newProfile = new ClientProfile();
+                    newProfile.setUser(user);
+                    return newProfile;
+                });
 
-        ClientProfile profile = new ClientProfile(
-                user,
-                request.companyName(),
-                request.billingAddress()
-        );
+        profile.setCompanyName(request.companyName());
+        profile.setBillingAddress(request.billingAddress());
         clientProfileRepository.save(profile);
 
         user.setOnboardingStep(OnboardingStep.COMPLETED);

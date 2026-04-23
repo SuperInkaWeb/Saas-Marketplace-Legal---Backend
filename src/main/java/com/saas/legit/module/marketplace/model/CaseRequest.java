@@ -45,6 +45,9 @@ public class CaseRequest {
     @Column(precision = 10, scale = 2)
     private BigDecimal budget;
 
+    @Column(length = 10)
+    private String currency = "USD";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private CaseRequestStatus status = CaseRequestStatus.OPEN;

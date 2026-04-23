@@ -55,6 +55,7 @@ public class ClientCaseService {
         caseRequest.setTitle(request.title());
         caseRequest.setDescription(request.description());
         caseRequest.setBudget(request.budget());
+        caseRequest.setCurrency(request.currency() != null ? request.currency() : "USD");
         caseRequest.setStatus(CaseRequestStatus.OPEN);
 
         if (request.specialtyId() != null) {
@@ -182,6 +183,7 @@ public class ClientCaseService {
                         .lawyerSlug(p.getLawyerProfile().getSlugLawyerProfile())
                         .proposalText(p.getProposalText())
                         .proposedFee(p.getProposedFee())
+                        .currency(p.getCurrency())
                         .status(p.getStatus())
                         .lawyerAvatarUrl(p.getLawyerProfile().getUser().getAvatarURL())
                         .createdAt(p.getCreatedAt())
@@ -193,6 +195,7 @@ public class ClientCaseService {
                 .title(caseRequest.getTitle())
                 .description(caseRequest.getDescription())
                 .budget(caseRequest.getBudget())
+                .currency(caseRequest.getCurrency())
                 .specialtyName(caseRequest.getSpecialty() != null
                         ? caseRequest.getSpecialty().getName() : null)
                 .clientName(caseRequest.getClientProfile().getCompanyName() != null ? 

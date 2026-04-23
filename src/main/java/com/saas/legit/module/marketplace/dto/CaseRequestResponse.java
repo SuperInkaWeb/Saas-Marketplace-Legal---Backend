@@ -17,6 +17,7 @@ public class CaseRequestResponse {
     private String title;
     private String description;
     private BigDecimal budget;
+    private String currency;
     private String specialtyName;
     private CaseRequestStatus status;
     private OffsetDateTime createdAt;

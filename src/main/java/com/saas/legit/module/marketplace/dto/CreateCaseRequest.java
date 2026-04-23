@@ -16,5 +16,6 @@ public record CreateCaseRequest(
 
         Long specialtyId,
 
-        BigDecimal budget
+        BigDecimal budget,
+        String currency
 ) {}

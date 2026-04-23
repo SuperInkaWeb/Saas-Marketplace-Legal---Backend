@@ -52,7 +52,7 @@ public class Document {
     @Column(name = "file_url", nullable = false, length = 500)
     private String fileUrl;
 
-    @Column(name = "file_type", length = 50)
+    @Column(name = "file_type", length = 255)
     private String fileType;
 
     @Column(columnDefinition = "TEXT")
@@ -71,7 +71,7 @@ public class Document {
     private BigDecimal price = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "signature_status", length = 50)
+    @Column(name = "signature_status", length = 100)
     private SignatureStatus signatureStatus = SignatureStatus.NOT_REQUIRED;
 
     @Column(name = "external_signature_id", length = 255)
