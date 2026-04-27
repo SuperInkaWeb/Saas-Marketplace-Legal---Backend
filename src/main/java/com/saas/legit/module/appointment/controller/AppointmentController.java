@@ -6,6 +6,7 @@ import com.saas.legit.module.appointment.dto.AppointmentResponse;
 import com.saas.legit.module.appointment.model.AppointmentStatus;
 import com.saas.legit.module.appointment.service.AppointmentService;
 import jakarta.validation.Valid;
+import com.saas.legit.module.appointment.dto.BusySlotResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,5 +47,10 @@ public class AppointmentController {
             @RequestParam AppointmentStatus status) {
         Long userId = SecurityUtils.getCurrentUser().userId();
         return ResponseEntity.ok(appointmentService.updateAppointmentStatus(userId, appointmentId, status));
+    }
+
+    @GetMapping("/lawyer/{lawyerPublicId}/busy")
+    public ResponseEntity<List<BusySlotResponse>> getBusySlots(@PathVariable UUID lawyerPublicId) {
+        return ResponseEntity.ok(appointmentService.getBusySlots(lawyerPublicId));
     }
 }

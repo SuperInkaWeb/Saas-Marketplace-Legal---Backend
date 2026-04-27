@@ -30,10 +30,14 @@ public class CloudinaryService {
     }
 
     public byte[] downloadPrivateFile(String url) throws IOException {
-        // Files are uploaded with access_mode=public, so we can download directly.
-        // Use Java's built-in HTTP client for a reliable fetch.
-        try (java.io.InputStream is = java.net.URI.create(url).toURL().openStream()) {
+        // Use a more robust fetch with a User-Agent to avoid being blocked by Cloudinary's CDN
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+        
+        try (java.io.InputStream is = connection.getInputStream()) {
             return is.readAllBytes();
+        } finally {
+            connection.disconnect();
         }
     }
 }

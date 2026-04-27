@@ -19,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saas.legit.module.appointment.dto.BusySlotResponse;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -54,7 +57,7 @@ public class AppointmentService {
                 request.getScheduledEnd());
 
         if (hasOverlap) {
-            throw new IllegalArgumentException("The lawyer already has an appointment during this time slot");
+            throw new IllegalArgumentException("El abogado ya tiene una cita programada en este horario");
         }
 
         Appointment appointment = new Appointment();
@@ -122,6 +125,21 @@ public class AppointmentService {
 
         return mapToResponse(appointmentRepository.save(appointment));
     }
+    @Transactional(readOnly = true)
+    public List<BusySlotResponse> getBusySlots(UUID lawyerPublicId) {
+        List<AppointmentStatus> activeStatuses = Arrays.asList(
+                AppointmentStatus.PENDING,
+                AppointmentStatus.CONFIRMED,
+                AppointmentStatus.COMPLETED // Even if completed, it took that slot
+        );
+        
+        return appointmentRepository.findByLawyerProfile_PublicIdAndStatusNotIn(
+                lawyerPublicId, 
+                Arrays.asList(AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW)
+        ).stream().map(a -> new BusySlotResponse(a.getScheduledStart(), a.getScheduledEnd()))
+        .collect(Collectors.toList());
+    }
+
     private AppointmentResponse mapToResponse(Appointment appointment) {
         return AppointmentResponse.builder()
                 .publicId(appointment.getPublicId())

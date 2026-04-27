@@ -16,6 +16,7 @@ public class CaseWithProposalsResponse {
     private String title;
     private String description;
     private BigDecimal budget;
+    private String currency;
     private String specialtyName;
     private String clientName;
     private String clientAvatarUrl;

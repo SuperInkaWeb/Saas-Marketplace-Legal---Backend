@@ -17,4 +17,6 @@ public class CreateProposalRequest {
     @NotNull(message = "La tarifa propuesta es obligatoria")
     @DecimalMin(value = "0.01", message = "La tarifa debe ser mayor a cero")
     private BigDecimal proposedFee;
+
+    private String currency;
 }

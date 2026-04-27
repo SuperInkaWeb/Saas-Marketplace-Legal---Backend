@@ -37,6 +37,9 @@ public class LawyerProposal {
     @Column(name = "proposed_fee", nullable = false, precision = 10, scale = 2)
     private BigDecimal proposedFee;
 
+    @Column(length = 10)
+    private String currency = "USD";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ProposalStatus status = ProposalStatus.PENDING;
