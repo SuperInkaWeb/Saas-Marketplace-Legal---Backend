@@ -10,15 +10,15 @@ import java.util.UUID;
 @Data
 public class AppointmentRequest {
     
-    @NotNull(message = "Lawyer public ID is required")
+    @NotNull(message = "El ID público del abogado es obligatorio")
     private UUID lawyerPublicId;
     
-    @NotNull(message = "Start time is required")
-    @Future(message = "Start time must be in the future")
+    @NotNull(message = "La hora de inicio es obligatoria")
+    @Future(message = "La hora de inicio debe ser en el futuro")
     private OffsetDateTime scheduledStart;
     
-    @NotNull(message = "End time is required")
-    @Future(message = "End time must be in the future")
+    @NotNull(message = "La hora de finalización es obligatoria")
+    @Future(message = "La hora de finalización debe ser en el futuro")
     private OffsetDateTime scheduledEnd;
     
     private String notes;

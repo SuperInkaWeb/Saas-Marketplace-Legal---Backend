@@ -18,6 +18,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByClientProfile_IdClientProfileOrderByScheduledStartDesc(Long clientProfileId);
     
     List<Appointment> findByLawyerProfile_IdLawyerProfileOrderByScheduledStartDesc(Long lawyerProfileId);
+    
+    List<Appointment> findByLawyerProfile_PublicIdAndStatusNotIn(UUID publicId, List<com.saas.legit.module.appointment.model.AppointmentStatus> statuses);
 
     @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE a.lawyerProfile.idLawyerProfile = :lawyerId " +
            "AND a.status NOT IN ('CANCELLED', 'NO_SHOW') " +

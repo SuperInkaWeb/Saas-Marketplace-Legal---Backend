@@ -123,7 +123,7 @@ public class DocumentService {
         Document doc = documentRepository.findByPublicId(documentPublicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
 
-        if (!doc.getUser().getIdUser().equals(userId)) {
+        if (!isAuthorized(userId, doc)) {
             throw new IllegalArgumentException("Not authorized to access this document");
         }
 
@@ -156,8 +156,7 @@ public class DocumentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
 
         // Basic authorization: check if owner or has access to matter
-        // In this version, we check if the user is the owner
-        if (!doc.getUser().getIdUser().equals(userId)) {
+        if (!isAuthorized(userId, doc)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -201,6 +200,29 @@ public class DocumentService {
             log.error("Error proxying document file: {} - {}", e.getClass().getSimpleName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean isAuthorized(Long userId, Document doc) {
+        // Owner
+        if (doc.getUser().getIdUser().equals(userId)) return true;
+
+        // Matter associated: check lawyer or client
+        if (doc.getMatter() != null) {
+            Matter matter = doc.getMatter();
+            
+            // Lawyer of the matter
+            if (matter.getLawyer() != null && matter.getLawyer().getIdUser().equals(userId)) {
+                return true;
+            }
+            
+            // Client of the matter
+            if (matter.getClient() != null && matter.getClient().getUser() != null && 
+                matter.getClient().getUser().getIdUser().equals(userId)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     private DocumentResponse mapToResponse(Document doc) {
